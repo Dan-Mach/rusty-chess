@@ -1,25 +1,3 @@
 [package]
 name = "engine"
 version = "0.1.0"
-edition = "2024"
-author = "Mach"
-description = "A chess engine in Rust"
-repository = "https://github.com/Dan-Mach/rusty-chess.git"
-
-[dependencies]
-rand = "0.8"
-rayon = "1.7"
-serde_json = "1.0"
-
-[dev-dependencies]
-criterion = "0.5"
-
-[features]
-default = []
-uci = []
-debug = []
-
-[[bin]]
-name = "engine"
-path = "src/main.rs"
-
