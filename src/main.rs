@@ -7,7 +7,6 @@ fn main (){
 
     let dynamic = &sized;
 
-    //prints: "17 [0, 0, 0, 0, 0, 0, 0, 0]"
     println!("{} {:?}", dynamic.info, dynamic.data);
 }
 
