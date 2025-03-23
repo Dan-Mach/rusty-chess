@@ -1,43 +1,23 @@
-pub struct Board {
-    pub squares: [[char;8];8]
+use crate::structures::Board;
+use crate::data::PIECE_COUNTS;
+
+
+pub fn print_board(board: &Board) {
+    println!(" a b c d e f g h");
+    println!("--------------------");
+
+    for (i, row) in board.squares.iter().enumerate() {
+        print!("{} |", 8-i);
+        for &square in row.iter() {
+            print!("{}", square);
+        }
+        println!("|");
+    }
+    println!("-------------------");
+    println!("Piece count ");
+    let piece_names = ["Pawns", "knights", "Bishops", "Rooks", "Queens", "Kings"];
+    for (i, &count) in PIECE_COUNTS.iter().enumerate() {
+        println!("{}: {}", piece_names[i], count);
+    }
 }
 
-impl Board {
-    pub fn new() -> Self {
-        let mut board = [[' '; 8];8];
-        let piece_setup = [
-            "rnbqkbnr",
-            "pppppppp",
-            " ",
-            " ",
-            " ",
-            " ",
-            "PPPPPPPPP",
-            "RNBQKBNR",
-
-        ];
-
-        for (i, row) in piece_setup.iter().enumerate() {
-            for (j, c) in row.chars().enumerate() {
-                board[i][j] = c;
-            }
-        }
-        Self { squares:board}
-    }
-
-    pub fn print_board(&self) {
-        println!(" a b c d e f g h");
-        println!("--------------------");
-
-        for (i, row) in self.squares.iter().enumerate() {
-            print!("{} |", 8-i);
-
-            for &square in row.iter() {
-                print!("{}", square);
-            }
-            println!("|");
-        }
-        println!("-------------------");
-    }
-
-}
