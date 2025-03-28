@@ -20,20 +20,40 @@ impl Pieces {
         }
     }
 }
+#[derive(Debug, Copy, Clone)]
 pub enum File { A, B, C, D, E, F, G, H, }
 impl File {
-    pub fn to_char(self) -> char {
-        match self {
-            File::A => 'a',
-            File::B => 'b',
-            File::C => 'c',
-            File::D => 'd',
-            File::E => 'e',
-            File::F => 'f',
-            File::G => 'g',
-            File::H => 'h',
-        }
+    pub fn index(&self) -> usize {
+        *self as usize
     }
+    pub fn iter () -> impl
+        Iterator<Item = File> {
+        [
+            File::A ,
+            File::B ,
+            File::C ,
+            File::D ,
+            File::E ,
+            File::F ,
+            File::G ,
+            File::H ,
+            
+        ].iter().copied()
+    }
+}
+impl File {
+    pub fn to_char(self) -> char {
+    match self {
+        File::A => 'a',
+        File::B => 'b',
+        File::C => 'c',
+        File::D => 'd',
+        File::E => 'e',
+        File::F => 'f',
+        File::G => 'g',
+        File::H => 'h',
+    }
+}
 }
 
 #[derive(Debug, Copy, Clone)]

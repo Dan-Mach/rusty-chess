@@ -1,43 +1,66 @@
+use crate::pieces::{File, Pieces};
 pub struct Board {
-    pub squares: [[char;8];8]
+    pub squares:[[Option<Pieces>; 8]; 8],
 }
 
 impl Board {
     pub fn new() -> Self {
-        let mut board = [[' '; 8];8];
-        let piece_setup = [
-            "rnbqkbnr",
-            "pppppppp",
-            " ",
-            " ",
-            " ",
-            " ",
-            "PPPPPPPPP",
-            "RNBQKBNR",
+        let mut board = Board {
+            squares: [[None;8]; 8],
+        };
 
+        for file in 0..8 {
+            board.squares[1][file] = Some(Pieces::WhitePawn);
+            board.squares[6][file] = Some(Pieces::BlackPawn);
+        }
+
+        let back_rank_white = [
+            Pieces::WhiteRook,
+            Pieces::WhiteKnight,
+            Pieces::WhiteBishop,
+            Pieces::WhiteQueen,
+            Pieces::WhiteKing,
+            Pieces::WhiteBishop,
+            Pieces::WhiteKnight,
+            Pieces::WhiteRook,
         ];
 
-        for (i, row) in piece_setup.iter().enumerate() {
-            for (j, c) in row.chars().enumerate() {
-                board[i][j] = c;
-            }
+        let back_rank_black = [
+            Pieces::BlackRook,
+            Pieces::BlackKnight,
+            Pieces::BlackBishop,
+            Pieces::BlackQueen,
+            Pieces::BlackKing,
+            Pieces::BlackBishop,
+            Pieces::BlackKnight,
+            Pieces::BlackRook
+        ];
+
+
+        for file in 0..8 {
+            board.squares[0][file] = Some(back_rank_white[file]);
+            board.squares[7][file] = Some(back_rank_black[file]);
         }
-        Self { squares:board}
+
+        board
     }
 
-    pub fn print_board(&self) {
-        println!(" a b c d e f g h");
-        println!("--------------------");
-
-        for (i, row) in self.squares.iter().enumerate() {
-            print!("{} |", 8-i);
-
-            for &square in row.iter() {
-                print!("{}", square);
+    pub fn print(&self) {
+        for rank in (0..8).rev() {
+            print!("{:3}", rank + 1);
+            print!("| ");
+            for file in File::iter(){
+                match self.squares[rank][file.index()] {
+                    Some(pieces) => print!("{:3}", pieces.to_string()),
+                    None => print!(" . "),
+                }
             }
-            println!("|");
+            println!();
         }
-        println!("-------------------");
+        println!("   ________________________________");
+        //println!("      a   b   c   d   e   f   g   h");
+        for file in File::iter() {
+            print!("    {:1}", file.to_char())
+        }
     }
-
 }
