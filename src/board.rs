@@ -47,20 +47,21 @@ impl Board {
 
     pub fn print(&self) {
         for rank in (0..8).rev() {
+            println!();
             print!("{:3}", rank + 1);
-            print!("| ");
+            print!("  ");
             for file in File::iter(){
                 match self.squares[rank][file.index()] {
-                    Some(pieces) => print!("{:3}", pieces.to_string()),
-                    None => print!(" . "),
+                    Some(pieces) => print!("{:4} ", pieces.to_string()),
+                    None => print!(".    "),
                 }
             }
             println!();
         }
-        println!("   ________________________________");
-        //println!("      a   b   c   d   e   f   g   h");
+        println!("     ____________________________________");
+        //println!(" a   b   c   d   e   f   g   h");
         for file in File::iter() {
-            print!("    {:1}", file.to_char())
+            print!("    {}", file.to_char())
         }
     }
 }
