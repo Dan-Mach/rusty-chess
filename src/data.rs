@@ -1,1 +1,0 @@
-pub static PIECE_COUNTS: [u8; 6] = [8, 2, 2, 2, 1, 1];

@@ -1,67 +1,121 @@
-use crate::pieces::{File, Pieces};
+use crate::pieces::{Piece, NUM_PIECES};
+use crate::color::{Color, NUM_COLORS};
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Board {
-    pub squares:[[Option<Pieces>; 8]; 8],
+    squares:[[Option<Piece>;8]; 8],
+    pieces: [u64; NUM_PIECES],
+    color_combined: [u64; NUM_COLORS],
+    combined: u64,
+    side_to_move: Color,
+
+
 }
 
+pub fn parse_fen(fen: &str) -> ([u64; NUM_PIECES],[u64; NUM_COLORS], u64, Color) {
+    let mut pieces = [0; NUM_PIECES];
+    let mut color_combined = [0; NUM_COLORS];
+    let mut combined:u64 = 0;
+    let mut side_to_move = Color::White;
+
+    let sections: Vec<&str> = fen.split_whitespace().collect();
+    let ranks:Vec<&str> =sections[0].split('/').collect();
+
+    for (rank_index, &rank) in ranks.iter().enumerate() {
+        let mut file = 0;
+        for c in rank.chars() {
+            if c.is_digit(10) {
+                file += c.to_digit(10).unwrap();
+            }
+            else {
+                let square = (7 - rank_index) * 8 + file as usize;
+                let piece = match c {
+                    'P' => Some((Piece::Pawn, Color::White)),
+                    'p' => Some((Piece::Pawn, Color::Black)),
+                    'N' => Some((Piece::Knight, Color::White)),
+                    'n' => Some((Piece::Knight, Color::Black)),
+                    'B' => Some((Piece::Bishop, Color::White)),
+                    'b' => Some((Piece::Bishop, Color::Black)),
+                    'R' => Some((Piece::Rook, Color::White)),
+                    'r' => Some((Piece::Rook, Color::Black)),
+                    'Q' => Some((Piece::Queen, Color::White)),
+                    'q' => Some((Piece::Queen, Color::Black)),
+                    'K' => Some((Piece::King, Color::White)),
+                    'k' => Some((Piece::King, Color::Black)),
+                    _=> None,
+                };
+
+                if let Some((piece, color)) = piece {
+                    pieces[piece.to_index()] |= 1 << square;
+                    color_combined[color.to_index()] |= 1 << square;
+                    combined |= 1 << square;
+                }
+                file += 1;
+            }
+        }
+    }
+    if sections[1] == "b" {
+        side_to_move = Color::Black;
+    }
+    (pieces, color_combined, combined, side_to_move)
+}
+
+
 impl Board {
-    pub fn new() -> Self {
+    pub fn new(_fen: &str) -> Self {
         let mut board = Board {
-            squares: [[None;8]; 8],
+            squares: [[None;8]; 8 ],
+            pieces: [0; NUM_PIECES],
+            color_combined: [0; NUM_COLORS],
+            combined: 0,
+            side_to_move: Color::White,
         };
 
         for file in 0..8 {
-            board.squares[1][file] = Some(Pieces::WhitePawn);
-            board.squares[6][file] = Some(Pieces::BlackPawn);
+            board.squares[1][file] = Some(Piece::Pawn);
+            board.squares[6][file] = Some(Piece::Pawn);
         }
+        
 
-        let back_rank_white = [
-            Pieces::WhiteRook,
-            Pieces::WhiteKnight,
-            Pieces::WhiteBishop,
-            Pieces::WhiteQueen,
-            Pieces::WhiteKing,
-            Pieces::WhiteBishop,
-            Pieces::WhiteKnight,
-            Pieces::WhiteRook,
+        let back_rank = [
+            Piece::Rook, Piece::Knight, Piece::Bishop, Piece::Queen, 
+            Piece::King, Piece::Bishop, Piece::Knight, Piece::Rook
         ];
-
-        let back_rank_black = [
-            Pieces::BlackRook,
-            Pieces::BlackKnight,
-            Pieces::BlackBishop,
-            Pieces::BlackQueen,
-            Pieces::BlackKing,
-            Pieces::BlackBishop,
-            Pieces::BlackKnight,
-            Pieces::BlackRook
-        ];
-
-
-        for file in 0..8 {
-            board.squares[0][file] = Some(back_rank_white[file]);
-            board.squares[7][file] = Some(back_rank_black[file]);
+       
+        for( file, &piece) in back_rank.iter().enumerate() {
+            board.squares[0][file] = Some(piece);
+            board.squares[7][file] = Some(piece);
         }
 
         board
     }
+    /// ```
+    /// let fen = "rnbqkbnr/pppppppp/8/8/4p3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1 ";
+    /// let (white_pawns, black_pawns) = parse_fen(fen)
+    /// assert!(white_pawns != 0 || black_pawns != 0, "Pawns should exist on the board");
+    /// ```
 
-    pub fn print(&self) {
+    pub fn print(&self , _fen: &str) {
         for rank in (0..8).rev() {
             println!();
             print!("{:3}", rank + 1);
             print!("  ");
-            for file in File::iter(){
-                match self.squares[rank][file.index()] {
-                    Some(pieces) => print!("{:4} ", pieces.to_string()),
-                    None => print!(".    "),
+            for file in 0..8 {
+                match self.squares[rank][file] {
+                    Some(pieces) => {
+                        let color = if rank < 2 {Color::White}
+                        else {Color::Black};
+                        print!("{:4}", pieces.to_string(color));
+                    },
+                    None => print!(".   "),
                 }
             }
             println!();
         }
-        println!("     ____________________________________");
-        //println!(" a   b   c   d   e   f   g   h");
-        for file in File::iter() {
-            print!("    {}", file.to_char())
-        }
+        println!("     _____________________________");
+        println!("     a   b   c   d   e   f   g   h");
+        //for file in File::iter() {
+         ///////print!("    {}", file.)
+        //}
     }
 }

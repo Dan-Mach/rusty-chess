@@ -1,19 +1,17 @@
 mod board;
 mod pieces;
+mod file;
+mod error;
+mod color;
+mod rank;
 mod bitboard;
 
-use board::Board;
-use bitboard::{bit_table, count_bits, pop_bit, print_bitboard};
+use crate::pieces::NUM_PIECES;
+use crate::board::Board;
 fn main () {
-    let mut bitboard:u64 = 45;
-    let board = Board::new();
-    board.print();
-    print_bitboard(100);
-    count_bits(1);
+    let fen = "rnbqkbnr/pppppppp/8/8/4p3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1 ";
+    let board = Board::new(fen);
+    board.print(fen);
+
     
-    println!();
-    let bit_index = pop_bit(&mut bitboard, &bit_table());
-
-    println!("Bit index: {}", bit_index);
-
 }
