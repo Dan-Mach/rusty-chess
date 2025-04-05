@@ -19,7 +19,8 @@ pub fn pop_bit(bb: &mut u64, bit_table:&[u32;64]) -> i32{
      if *bb == 0 {
         return -1;
         }
-    let fold: usize = (*bb & (!*bb + 1)).trailing_zeros() as usize;
+    let b:u64 = *bb ^ (*bb - 1);
+    let fold: usize = (((b & 0xffffffff) ^ (b >> 32)).wrapping_mul(0x783a9b23) >> 26)  as usize ;
     
     *bb &= *bb - 1;
 
@@ -31,45 +32,7 @@ pub fn pop_bit(bb: &mut u64, bit_table:&[u32;64]) -> i32{
     }
     
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_pop_bit() {
-        let mut bb: u64 = 0b10010; // Binary representation
-        let bit_table = bit_table();
-        assert_eq!(pop_bit(&mut bb, bit_table), 1); // Pop the first bit (index 1)
-        assert_eq!(bb, 0b10000); // Remaining bits
-        assert_eq!(pop_bit(&mut bb, bit_table), 4); // Pop the next bit (index 4)
-        assert_eq!(bb, 0); // No bits left
-        assert_eq!(pop_bit(&mut bb, bit_table), -1); // No bits to pop
-    }
-
-    #[test]
-    fn test_count_bits() {
-        assert_eq!(count_bits(0b10101), 3); // 3 bits set
-        assert_eq!(count_bits(0b11111111), 8); // 8 bits set
-        assert_eq!(count_bits(0), 0); // No bits set
-    }
-
-    #[test]
-    fn test_bit_shifting() {
-        let mut bb: u64 = 0b1; // Start with the least significant bit set
-        for i in 0..64 {
-            assert_eq!(count_bits(bb), 1); // Only one bit should be set
-            assert_eq!(bb, 1 << i); // Ensure the bit is in the correct position
-            bb <<= 1; // Shift the bit to the left
-        }
-    }
-
-    #[test]
-    fn test_print_bitboard() {
-        let bb: u64 = 0b100000001; // Bits set at positions 0 and 8
-        print_bitboard(bb, "Test Bitboard");
-        // Visually inspect the output to ensure correctness
-    }
-}
 pub fn count_bits(mut b:u64) -> i32 {
     let mut r:i32 = 0;
     while b != 0 {

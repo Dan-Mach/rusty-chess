@@ -39,7 +39,7 @@ impl Piece {
     }
 
     /// Convert a piece with a color to a string.  White pieces are uppercase, black pieces are
-    /// lowercase for black pieces and uppercase for white pieces.
+    /// lowercase.
     ///
     /// ```
     /// use chess::{Piece, Color};
@@ -56,9 +56,14 @@ impl Piece {
             piece
         }
     }
-    pub fn iter() -> impl Iterator<Item= Piece> {
-        ALL_PIECES.into_iter()
-   }
+
+    pub const  majPce:[Piece;3]  = [
+        Piece::Queen, Piece::King, Piece::Rook
+    ];
+    pub const minPce:[Piece;3] = [
+        Piece::Bishop, Piece::Knight, Piece::Pawn
+    ];
+
 }
 
 impl fmt::Display for Piece {
@@ -75,6 +80,19 @@ impl fmt::Display for Piece {
                 Piece::King => "k",
             }
         )
+    }
+}
+
+impl Piece {
+    pub fn iter() -> impl Iterator<Item= Piece> {
+        [
+            Piece::Pawn, 
+            Piece::Knight,
+            Piece::Bishop,
+            Piece::Rook,
+            Piece::Queen,
+            Piece::King,
+        ].into_iter()
     }
 }
 
