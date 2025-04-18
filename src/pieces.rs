@@ -1,78 +1,96 @@
-#[derive(Debug, Copy, Clone)]
+use crate::color:: Color;
+use std::fmt;
 
-pub enum Pieces{ WhitePawn, WhiteKnight, WhiteBishop, WhiteRook, WhiteQueen, WhiteKing,
-             BlackPawn, BlackKnight, BlackBishop, BlackRook, BlackQueen, BlackKing,}
-impl Pieces {
-    pub fn to_string(self) -> &'static str{
-        match self {
-            Pieces::WhitePawn => "P",
-            Pieces::WhiteKnight => "N",
-            Pieces::WhiteBishop => "B",
-            Pieces::WhiteRook => "R",
-            Pieces::WhiteQueen => "Q",
-            Pieces::WhiteKing => "K",
-            Pieces::BlackPawn => "p",
-            Pieces::BlackKnight => "n",
-            Pieces::BlackBishop => "b",
-            Pieces::BlackRook => "r",
-            Pieces::BlackQueen => "q",
-            Pieces::BlackKing => "k",
-        }
-    }
+#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Hash, Ord)]
+//chess piecees 
+pub enum Piece {
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
 }
-#[derive(Debug, Copy, Clone)]
-pub enum File { A, B, C, D, E, F, G, H, }
-impl File {
-    pub fn index(&self) -> usize {
+
+/// How many piece types are there?
+pub const NUM_PIECES: usize = 6;
+
+/// An array representing each piece type, in order of ascending value.
+pub const ALL_PIECES: [Piece; NUM_PIECES] = [
+    Piece::Pawn,
+    Piece::Knight,
+    Piece::Bishop,
+    Piece::Rook,
+    Piece::Queen,
+    Piece::King,
+];
+
+/// How many ways can I promote?
+pub const NUM_PROMOTION_PIECES: usize = 4;
+
+/// What pieces can I promote to?
+pub const PROMOTION_PIECES: [Piece; 4] = [Piece::Queen, Piece::Knight, Piece::Rook, Piece::Bishop];
+
+impl Piece {
+    /// Convert the `Piece` to a `usize` for table lookups.
+    #[inline]
+    pub fn to_index(&self) -> usize {
         *self as usize
     }
-    pub fn iter () -> impl
-        Iterator<Item = File> {
-        [
-            File::A ,
-            File::B ,
-            File::C ,
-            File::D ,
-            File::E ,
-            File::F ,
-            File::G ,
-            File::H ,
-            
-        ].iter().copied()
+
+    /// Convert a piece with a color to a string.  White pieces are uppercase, black pieces are
+    /// lowercase.
+    ///
+    /// ```
+    /// use chess::{Piece, Color};
+    ///
+    /// assert_eq!(Piece::Queen.to_string(Color::White), "Q");
+    /// assert_eq!(Piece::Bishop.to_string(Color::Black), "b");
+    /// ```
+    #[inline]
+    pub fn to_string(&self, color: Color) -> String {
+        let piece = format!("{}", self);
+        if color == Color::White {
+            piece.to_uppercase()
+        } else {
+            piece
+        }
     }
-}
-impl File {
-    pub fn to_char(self) -> char {
-    match self {
-        File::A => 'a',
-        File::B => 'b',
-        File::C => 'c',
-        File::D => 'd',
-        File::E => 'e',
-        File::F => 'f',
-        File::G => 'g',
-        File::H => 'h',
-    }
-}
+
+    pub const  majPce:[Piece;3]  = [
+        Piece::Queen, Piece::King, Piece::Rook
+    ];
+    pub const minPce:[Piece;3] = [
+        Piece::Bishop, Piece::Knight, Piece::Pawn
+    ];
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum Rank { One, Two, Three, Four, Five, Six, Seven, Eight, }
-impl Rank {
-    pub fn iter() -> impl 
-        DoubleEndedIterator<Item = Rank> {
-        vec![
-            Rank::One,
-            Rank::Two,
-            Rank::Three,
-            Rank::Four,
-            Rank::Five,
-            Rank::Six,
-            Rank::Seven,
-            Rank::Eight,
+impl fmt::Display for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                Piece::Pawn => "p",
+                Piece::Knight => "n",
+                Piece::Bishop => "b",
+                Piece::Rook => "r",
+                Piece::Queen => "q",
+                Piece::King => "k",
+            }
+        )
+    }
+}
+
+impl Piece {
+    pub fn iter() -> impl Iterator<Item= Piece> {
+        [
+            Piece::Pawn, 
+            Piece::Knight,
+            Piece::Bishop,
+            Piece::Rook,
+            Piece::Queen,
+            Piece::King,
         ].into_iter()
     }
-}
-
-
-   
+}  

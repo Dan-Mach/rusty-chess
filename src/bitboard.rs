@@ -1,4 +1,6 @@
-use crate::pieces::Rank;
+
+use crate::rank::Rank;
+
 pub fn bit_table () -> &'static [u32;64]{
     static  BIT_TABLE:[u32;64] = [
     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
@@ -13,15 +15,21 @@ pub fn bit_table () -> &'static [u32;64]{
 
 
 pub fn pop_bit(bb: &mut u64, bit_table:&[u32;64]) -> i32{
-    if *bb == 0 {
+    
+     if *bb == 0 {
         return -1;
-    }
+        }
     let b:u64 = *bb ^ (*bb - 1);
-    let fold = (b & 0xffffffff) ^ (b >> 32);
-
+    let fold: usize = (((b & 0xffffffff) ^ (b >> 32)).wrapping_mul(0x783a9b23) >> 26)  as usize ;
+    
     *bb &= *bb - 1;
 
-    bit_table[((fold.wrapping_mul(0x783a9b23)) >> 26) as usize ] as i32
+    if fold < 64 {
+        bit_table[fold] as i32
+    }
+    else {
+        -1
+    }
     
 }
 
@@ -34,22 +42,24 @@ pub fn count_bits(mut b:u64) -> i32 {
     return r;
 }
 
-pub fn print_bitboard(bb:u64) {
-    let shiftme:u64 = 1;
-    let mut sq = 0;
-
+pub fn print_bitboard(bb:u64, label:&str) {
+    println!("{}", label);
+    let  shiftme:u64 = 1;
+    //let mut sq = 0;
     println!("\n");
 
-    for _rank in Rank::iter().rev() {
-        for _file in 0..8 {
+
+    for rank in Rank::iter().rev() {
+        for file in 0..8 {
+            let sq = rank as i32* 8 + file;
             if (shiftme << sq) & bb != 0 {
                 print!( "   P");
             }
             else {
                 print!( "   .");
             }
-            sq += 1;
         }
         println!();
     }
+    println!();
 }
