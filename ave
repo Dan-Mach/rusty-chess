@@ -1,0 +1,35 @@
+[33mcommit 0288d2d0e405140a15b34554a6400cd63f572cf7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: Dan-Mach <danreech83@gmail.com>
+Date:   Fri Mar 28 16:42:08 2025 +0300
+
+    bitboard
+
+[33mcommit 9b29f55d875f3e075a7cdcb873b0922ed8af3cde[m
+Author: Dan-Mach <danreech83@gmail.com>
+Date:   Sat Mar 22 21:15:05 2025 +0300
+
+    board
+
+[33mcommit 7d22e1feed5437ae6e4bd58ee8afcfb813bfdae0[m[33m ([m[1;31morigin/master[m[33m)[m
+Author: Dan-Mach <danreech83@gmail.com>
+Date:   Wed Feb 26 21:43:44 2025 +0300
+
+    dynamic array
+
+[33mcommit 1dbb3c30804e3ffe8b72629455608e54628b50c7[m
+Author: Dan-Mach <danreech83@gmail.com>
+Date:   Wed Feb 26 20:02:26 2025 +0300
+
+    2d array
+
+[33mcommit cdfaaecbda6b86b64e8b875f265f0f155ecd9093[m
+Author: Dan-Mach <danreech83@gmail.com>
+Date:   Tue Feb 25 18:40:19 2025 +0300
+
+    dependencies
+
+[33mcommit d7ac58fddb3fb0d08854ab901a6ec879c26b30b6[m
+Author: Dan-Mach <danreech83@gmail.com>
+Date:   Tue Feb 25 17:39:14 2025 +0300
+
+    new
