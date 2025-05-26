@@ -3,6 +3,7 @@ name = "engine"
 version = "0.1.0"
 edition = "2021"
 
+<<<<<<< HEAD
 
 [dependencies]
 arrayvec = "0.7.2"
@@ -31,3 +32,7 @@ opt-level = 3
 [build-dependencies]
 rand = { version = "0.7.2", default_features = false, features = ["small_rng"] }
 failure = "0.1.6"
+=======
+[dependencies]
+thiserror = "1.0"
+>>>>>>> 0f9b399dcfd99b6eb694a3ac808a502b98480908

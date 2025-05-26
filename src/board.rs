@@ -8,7 +8,14 @@ pub struct Board {
     color_combined: [u64; NUM_COLORS],
     combined: u64,
     side_to_move: Color,
-
+}
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Board {
+    squares:[[Option<Piece>;8]; 8],
+    pieces: [u64; NUM_PIECES],
+    color_combined: [u64; NUM_COLORS],
+    combined: u64,
+    side_to_move: Color,
 
 }
 

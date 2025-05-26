@@ -63,7 +63,6 @@ impl Piece {
     pub const minPce:[Piece;3] = [
         Piece::Bishop, Piece::Knight, Piece::Pawn
     ];
-
 }
 
 impl fmt::Display for Piece {
