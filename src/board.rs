@@ -100,9 +100,11 @@ impl Board {
         board
     }
     /// ```
+    /// use engine::Board;
     /// let fen = "rnbqkbnr/pppppppp/8/8/4p3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1 ";
-    /// )
-    /// assert!(white_pawns != 0 || black_pawns != 0, "Pawns should exist on the board");
+    /// 
+    /// let board = Board::parse_fen(fen);
+    /// board.print(fen);
     /// ```
 
     pub fn print(&self , _fen: &str) {

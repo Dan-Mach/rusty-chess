@@ -40,6 +40,7 @@ impl Color {
             Color::White => Rank::First,
             Color::Black => Rank::Eighth,
         }
+        
     }
     //black side
     #[inline]
