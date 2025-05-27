@@ -17,4 +17,5 @@ fn main() {
     let fen = "rnbqkbnr/pppppppp/8/8/4p3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1 ";
     let board = board::Board::parse_fen(fen);
     board.print(fen);
+    
 }

@@ -12,7 +12,6 @@ pub enum File {
     G = 6,
     H = 7,
 }
-
 pub const NUM_FILES: usize = 8;
 pub const ALL_FILES:[File; NUM_FILES] = [
     File::A ,
@@ -25,9 +24,6 @@ pub const ALL_FILES:[File; NUM_FILES] = [
     File::H ,
     
 ];
-
-  
-
 impl File {
     #[inline]
     pub fn from_index(i: usize) -> File {
@@ -62,12 +58,8 @@ impl File {
         *self as usize
     }
 }
-
-
 impl FromStr for File {
-
     type Err = Error;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() < 1 {
             return Err(Error::InvalidFile);
@@ -86,4 +78,5 @@ impl FromStr for File {
     }
     
 }
+
 
