@@ -34,14 +34,12 @@ impl Piece {
         *self as usize
     }
 
-    /// Convert a piece with a color to a string.  White pieces are uppercase, black pieces are
-    /// lowercase.
-    ///
+
     /// ```
-    /// use chess::{Piece, Color};
-    ///
-    /// assert_eq!(Piece::Queen.to_string(Color::White), "Q");
-    /// assert_eq!(Piece::Bishop.to_string(Color::Black), "b");
+    /// use engine::Color;
+    /// use engine::Piece;
+    /// assert_eq!(Piece::King.to_string(Color::White), "K");
+    /// assert_eq!(Piece::Knight.to_string(Color::Black), "n");
     /// ```
     #[inline]
     pub fn to_string(&self, color: Color) -> String {
@@ -69,12 +67,12 @@ impl fmt::Display for Piece {
             f,
             "{}",
             match *self {
-                Piece::Pawn => "P",
-                Piece::Knight => "N",
-                Piece::Bishop => "B",
-                Piece::Rook => "R",
-                Piece::Queen => "Q",
-                Piece::King => "K",
+                Piece::Pawn => "p",
+                Piece::Knight => "n",
+                Piece::Bishop => "b",
+                Piece::Rook => "r",
+                Piece::Queen => "q",
+                Piece::King => "k",
             }
         )
     }

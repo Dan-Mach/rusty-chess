@@ -1,5 +1,6 @@
 use crate::rank::Rank; 
 /// ```
+/// use engine::bit_table;
 /// let table = bit_table();
 /// assert_eq!(table[0], 0);
 /// assert_eq!(table[63], 63);
@@ -16,6 +17,7 @@ pub fn bit_table () -> &'static [u32;64]{
 }
 
 /// ```
+/// use engine::pop_bit;
 /// let mut bb = 0b10101; // bits at index 0, 2, 4. Decimal 21.
 /// assert_eq!(pop_bit(&mut bb), 0); 
 /// assert_eq!(bb, 0b10100);        
@@ -42,14 +44,15 @@ pub fn pop_bit(bb: &mut u64) -> i32 {
 }
 
 /// ```
+/// use engine::count_bits;
 /// assert_eq!(count_bits(0), 0);
 /// assert_eq!(count_bits(0b1), 1);
-/// assert_eq!(count_bits(0b10101), 3); // Indices 0, 2, 4 are set
+/// assert_eq!(count_bits(0b10111), 4); // Indices 0,1, 2, 4 are set
 /// assert_eq!(count_bits(u64::MAX), 64); // All bits set
 /// let bb: u64 = (1 << 0) | (1 << 15) | (1 << 63); // A1, H2, H8
 /// assert_eq!(count_bits(bb), 3);
 /// let bb_octal: u64 = 0o14444444444444;
-/// assert_eq!(count_bits(bb_octal), 17);
+/// assert_eq!(count_bits(bb_octal), 14);
 /// ```
 pub fn count_bits(mut b:u64) -> i32 {
     let mut r:i32 = 0;
@@ -62,6 +65,8 @@ pub fn count_bits(mut b:u64) -> i32 {
 
 
 /// ```
+/// use engine::print_bitboard;
+/// use engine::Rank;
 /// let bb_layout = (1 << 0)  | // A1 (square 0)
 ///                 (1 << 7)  | // H1 (square 7)
 ///                 (1 << 27) | // D4 (square 27) (Rank 3, File 3)

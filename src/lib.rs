@@ -17,3 +17,4 @@ pub use crate::genmove::*;
 pub use crate::error::*;
 pub use crate::bitboard::*;
 pub use crate::coordinates::*;
+  

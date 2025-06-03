@@ -564,72 +564,96 @@ impl fmt::Display for Board {
         Ok(())
     }
 }
-// In src/board.rs (or a test file importing necessary items)
+
+// At the end of src/board.rs
 
 #[cfg(test)]
 mod tests {
-    use super::*; // If in board.rs, to access Board, Color, etc.
-    use crate::genmove::{Move, Square, MoveList};
-    use crate::pieces::Piece as PieceKindEnum; // Your piece kind enum
-    use crate::color::Color;
+    use super::*; // Imports everything from the parent module (board.rs)
+                  // like Board, Color, etc.
+    use crate::genmove::{Move, Square}; // Assuming MoveList is Vec<Move>
+    // We don't strictly need PieceKindEnum or Color for this specific knight test's assertions 
+    // if we just check from/to squares, but good to have for other tests.
     use std::collections::HashSet;
 
-    // Helper to convert square strings like "e4" to Square (u8)
-    // You'd need to implement this based on your coordinate system,
-    // e.g., using rank_file_enums_to_square.
-    // For simplicity in this example, we might use direct u8 values.
+    // Helper function to convert algebraic square notation (e.g., "e4") to your Square (u8) type.
+    // This assumes A1=0, B1=1, ..., H1=7, A2=8, ..., H8=63 (LERF mapping).
     fn sq(s: &str) -> Square {
-        // Simplified placeholder - implement a robust version
-        let file_char = s.chars().nth(0).unwrap();
-        let rank_char = s.chars().nth(1).unwrap();
-        let file_val = (file_char as u8) - b'a';
-        let rank_val = (rank_char as u8) - b'1';
+        assert_eq!(s.len(), 2, "Square string must be 2 characters, e.g., 'e4'. Input was: '{}'", s);
+        let file_char = s.chars().nth(0).unwrap_or_else(|| panic!("Empty string for square file: {}", s));
+        let rank_char = s.chars().nth(1).unwrap_or_else(|| panic!("Empty string for square rank: {}", s));
+
+        assert!(('a'..='h').contains(&file_char), "Invalid file character: {} in {}", file_char, s);
+        assert!(('1'..='8').contains(&rank_char), "Invalid rank character: {} in {}", rank_char, s);
+
+        let file_val = (file_char as u8) - b'a'; // a=0, b=1, ... h=7
+        let rank_val = (rank_char as u8) - b'1'; // 1=0, 2=1, ... 8=7
+        
         rank_val * 8 + file_val
     }
 
     #[test]
-    fn test_knight_moves_from_d4_empty_board() {
-        let fen = "8/8/8/8/3N4/8/8/8 w - - 0 1"; // White Knight on d4
-        let board = Board::parse_fen(fen).expect("FEN parsing failed");
+    fn test_knight_moves_from_d4_on_empty_board_center() {
+        // 1. Setup: FEN for a board with only a white knight on d4
+        let fen = "8/8/8/8/3N4/8/8/8 w - - 0 1";
+        let board = Board::parse_fen(fen).expect("Failed to parse FEN for knight test");
         
-        let d4: Square = sq("d4"); // d4 is 3*8 + 3 = 27 if a1=0
-        let mut actual_moves = Vec::new();
+        // The knight is on d4. Calculate its Square index.
+        // Rank '4' is rank_val 3 (0-indexed). File 'd' is file_val 3 (0-indexed).
+        // Square index = rank_val * 8 + file_val = 3 * 8 + 3 = 24 + 3 = 27.
+        let knight_from_sq: Square = sq("d4"); // Should be 27
 
-        // If testing generate_knight_moves directly (assuming it's accessible):
-        // board.generate_knight_moves(d4, Color::White, &mut actual_moves);
+        // 2. Call move generation
+        let all_generated_moves = board.generate_legal_move();
 
-        // Or, if testing via generate_pseudo_legal_moves:
-        let all_pseudo_legal_moves = board.generate_legal_move();
-        actual_moves = all_pseudo_legal_moves.into_iter().filter(|m| m.from == d4).collect();
+        // 3. Filter for moves from our knight
+        let knight_actual_moves: HashSet<Move> = all_generated_moves
+            .into_iter()
+            .filter(|m| m.from == knight_from_sq)
+            .collect();
 
-        let expected_destinations: HashSet<Square> = [
-            sq("c2"), sq("e2"), sq("b3"), sq("f3"),
-            sq("b5"), sq("f5"), sq("c6"), sq("e6"),
-        ].iter().cloned().collect();
-
-        let actual_destinations: HashSet<Square> = actual_moves.iter().map(|m| m.to).collect();
-
-        assert_eq!(actual_moves.len(), 8, "Knight from d4 should have 8 moves on an empty board");
-        assert_eq!(actual_destinations, expected_destinations, "Knight moves from d4 are not as expected");
+        // 4. Define expected moves
+        // A knight on d4 (sq 27) on an empty board can move to 8 squares:
+        // D4 (rank 3, file 3) ->
+        // C2 (rank 1, file 2) -> sq 1*8+2 = 10
+        // E2 (rank 1, file 4) -> sq 1*8+4 = 12
+        // B3 (rank 2, file 1) -> sq 2*8+1 = 17
+        // F3 (rank 2, file 5) -> sq 2*8+5 = 21
+        // B5 (rank 4, file 1) -> sq 4*8+1 = 33
+        // F5 (rank 4, file 5) -> sq 4*8+5 = 37
+        // C6 (rank 5, file 2) -> sq 5*8+2 = 42
+        // E6 (rank 5, file 4) -> sq 5*8+4 = 44
+        let expected_moves: HashSet<Move> = [
+            Move::new_quiet(knight_from_sq, sq("c2")), // to 10
+            Move::new_quiet(knight_from_sq, sq("e2")), // to 12
+            Move::new_quiet(knight_from_sq, sq("b3")), // to 17
+            Move::new_quiet(knight_from_sq, sq("f3")), // to 21
+            Move::new_quiet(knight_from_sq, sq("b5")), // to 33
+            Move::new_quiet(knight_from_sq, sq("f5")), // to 37
+            Move::new_quiet(knight_from_sq, sq("c6")), // to 42
+            Move::new_quiet(knight_from_sq, sq("e6")), // to 44
+        ]
+        .iter()
+        .cloned() // Since Move is Copy, cloned() works well here.
+        .collect();
+        
+        // 5. Assert
+        assert_eq!(
+            knight_actual_moves.len(),
+            expected_moves.len(),
+            "Expected {} moves, but got {}. Generated: {:?}", 
+            expected_moves.len(), knight_actual_moves.len(), knight_actual_moves
+        );
+        assert_eq!(
+            knight_actual_moves, 
+            expected_moves,
+            "Generated knight moves from d4 do not match expected moves."
+        );
     }
 
-    #[test]
-    fn test_knight_moves_from_a1_corner() {
-        let fen = "N7/8/8/8/8/8/8/8 w - - 0 1"; // White Knight on a1
-        let board = Board::parse_fen(fen).expect("FEN parsing failed");
-        let a1: Square = sq("a1"); // a1 is 0*8 + 0 = 0
-        
-        let all_pseudo_legal_moves = board.generate_legal_move();
-        let actual_moves: Vec<Move> = all_pseudo_legal_moves.into_iter().filter(|m| m.from == a1).collect();
-
-        let expected_destinations: HashSet<Square> = [sq("b3"), sq("c2")].iter().cloned().collect();
-        let actual_destinations: HashSet<Square> = actual_moves.iter().map(|m| m.to).collect();
-        
-        assert_eq!(actual_moves.len(), 2, "Knight from a1 should have 2 moves");
-        assert_eq!(actual_destinations, expected_destinations, "Knight moves from a1 are not as expected");
-    }
-
-    // Add more tests:
-    // - Knight blocked by own pieces.
-    // - Knight capturing opponent's pieces.
+    // You should add more tests for knights:
+    // - test_knight_moves_from_corner_a1()
+    // - test_knight_moves_from_edge_h4()
+    // - test_knight_moves_blocked_by_own_pieces()
+    // - test_knight_moves_capturing_opponent_pieces()
 }

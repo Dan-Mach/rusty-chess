@@ -2,7 +2,7 @@ use crate::pieces::Piece;
 
 pub type Square  = u8;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Move {
     pub from: Square,
     pub to: Square,
