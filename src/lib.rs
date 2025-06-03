@@ -1,23 +1,19 @@
 mod board;
-pub use crate::board::*;
-
 mod pieces;
-pub use crate::pieces::*;
-
 mod color;
-pub use crate::color::*;
 mod file;
-pub use crate::file::*;
-
 mod rank;
-pub use crate::rank::*;
-
-// Add the new move module
 mod genmove;
-pub use crate::genmove::*;
-
 mod error;
-pub use crate::error::Error;
-
 mod bitboard;
+mod coordinates;
+
+pub use crate::board::*;
+pub use crate::pieces::*;
+pub use crate::color::*;
+pub use crate::file::*;
+pub use crate::rank::*;
+pub use crate::genmove::*;
+pub use crate::error::*;
 pub use crate::bitboard::*;
+pub use crate::coordinates::*;

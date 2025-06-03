@@ -92,12 +92,12 @@ impl ColoredPiece {
 
     pub fn to_char(&self) -> char {
         let mut c = match self.kind {
-            Piece::Pawn => 'p',
-            Piece::Knight => 'n',
-            Piece::Bishop => 'b',
-            Piece::Rook => 'r',
-            Piece::Queen => 'q',
-            Piece::King => 'k',
+            Piece::Pawn => 'P',
+            Piece::Knight => 'N',
+            Piece::Bishop => 'B',
+            Piece::Rook => 'R',
+            Piece::Queen => 'Q',
+            Piece::King => 'K',
         };
         if self.color == Color::Black {
             c = c.to_ascii_lowercase();
