@@ -4,24 +4,28 @@ use crate::bitboard;
 use crate::rank::Rank;
 use crate::file::File;
 use std::str::FromStr;
-
-
-#[allow(unused_imports)]
-use crate::genmove;
+use crate::genmove::{Move, MoveList, Square }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Board {
-    squares:[[Option<Piece>;8]; 8],
+    squares:[[Option<Piece>;8]; NUM_PIECES],
     pieces: [u64; NUM_PIECES],
     color_combined: [u64; NUM_COLORS],
     combined: u64,
     side_to_move: Color,
-    en_passant_target_square: Option<genmove::Square>,
+    en_passant_target_square: Option<Square>,
 
+}
+impl Default for Board {
+    #[inline]
+    fn default() -> Board {
+        Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        .expect("valid position")
+    }
 }
 
 impl Board {
-    pub fn generate_moves(&self) -> genmove::MoveList {
-        let mut moves = genmove::MoveList::new();
+    pub fn generate_moves(&self) -> MoveList {
+        let mut moves = MoveList::new();
         let current_player = self.side_to_move;
 
         // Iterate through all pieces of the current player
@@ -35,7 +39,7 @@ impl Board {
 
         moves
     }
-    fn generate_pawn_moves(&self, moves: &mut genmove::MoveList, player: Color) {
+    fn generate_pawn_moves(&self, moves: &mut MoveList, player: Color) {
         if player != Color::White {
             // We'll handle black pawns later or in a separate block
             return;
@@ -51,7 +55,7 @@ impl Board {
 
         let mut pawns_to_process = white_pawns_bb;
         while pawns_to_process != 0 {
-            let from_square = bitboard::pop_bit(&mut pawns_to_process) as genmove::Square;
+            let from_square = bitboard::pop_bit(&mut pawns_to_process) as Square;
             let current_rank_index = from_square / 8; // 0-indexed rank (0=Rank1, 1=Rank2, ..., 7=Rank8)
 
             // 1. Single Pawn Push (White)
@@ -59,12 +63,12 @@ impl Board {
             if single_push_target < 64 { // Ensure it's on the board
                 if (all_occupied_bb & (1u64 << single_push_target)) == 0 { // If target square is empty
                     if current_rank_index == 6 { // Pawn is on Rank 7, pushing to Rank 8 (promotion)
-                        moves.push(genmove::Move::new_promotion(from_square, single_push_target, Piece::Queen));
-                        moves.push(genmove::Move::new_promotion(from_square, single_push_target, Piece::Rook));
-                        moves.push(genmove::Move::new_promotion(from_square, single_push_target, Piece::Bishop));
-                        moves.push(genmove::Move::new_promotion(from_square, single_push_target, Piece::Knight));
+                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Queen));
+                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Rook));
+                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Bishop));
+                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Knight));
                     } else {
-                        moves.push(genmove::Move::new_quiet(from_square, single_push_target));
+                        moves.push(Move::new_quiet(from_square, single_push_target));
                     }
 
                     // 2. Double Pawn Push (White) - Can only happen if single push is also possible
@@ -73,7 +77,7 @@ impl Board {
                         if (all_occupied_bb & (1u64 << double_push_target)) == 0 { // If double target is empty
                             // This move would set an en passant target square for the next turn.
                             // We'll add that flag/detail to the Move struct later.
-                            moves.push(genmove::Move::new_quiet(from_square, double_push_target));
+                            moves.push(Move::new_quiet(from_square, double_push_target));
                         }
                     }
                 }
@@ -86,11 +90,11 @@ impl Board {
                 if capture_left_target < 64 { // Ensure it's on the board
                     if (opponent_pieces_bb & (1u64 << capture_left_target)) != 0 { // If opponent piece is on target
                         if current_rank_index == 6 { // Pawn on Rank 7, capturing onto Rank 8 (promotion)
-                            moves.push(genmove::Move::new_promotion(from_square, capture_left_target, Piece::Queen));
-                            moves.push(genmove::Move::new_promotion(from_square, capture_left_target, Piece::Rook));
+                            moves.push(Move::new_promotion(from_square, capture_left_target, Piece::Queen));
+                            moves.push(Move::new_promotion(from_square, capture_left_target, Piece::Rook));
                             // ... Bishop, Knight promotions
                         } else {
-                            moves.push(genmove::Move::new_quiet(from_square, capture_left_target));
+                            moves.push(Move::new_quiet(from_square, capture_left_target));
                         }
                     }
                     // TODO: Add En Passant capture check for capture_left_target
@@ -104,11 +108,11 @@ impl Board {
                 if capture_right_target < 64 { // Ensure it's on the board
                     if (opponent_pieces_bb & (1u64 << capture_right_target)) != 0 { // If opponent piece is on target
                         if current_rank_index == 6 { // Pawn on Rank 7, capturing onto Rank 8 (promotion)
-                            moves.push(genmove::Move::new_promotion(from_square, capture_right_target, Piece::Queen));
-                            moves.push(genmove::Move::new_promotion(from_square, capture_right_target, Piece::Rook));
+                            moves.push(Move::new_promotion(from_square, capture_right_target, Piece::Queen));
+                            moves.push(Move::new_promotion(from_square, capture_right_target, Piece::Rook));
                             // ... Bishop, Knight promotions
                         } else {
-                            moves.push(genmove::Move::new_quiet(from_square, capture_right_target));
+                            moves.push(Move::new_quiet(from_square, capture_right_target));
                         }
                     }
                     // TODO: Add En Passant capture check for capture_right_target
@@ -123,7 +127,7 @@ impl Board {
         let mut color_combined = [0; NUM_COLORS];
         let mut combined:u64 = 0;
         let mut side_to_move = Color::White;
-        let mut en_passant_target_square: Option<genmove::Square> = None;
+        let mut en_passant_target_square: Option<Square> = None;
         let mut squares = [[None; 8]; 8];
         let sections: Vec<&str> = fen.split_whitespace().collect();
         let ranks:Vec<&str> =sections[0].split('/').collect();
@@ -170,7 +174,7 @@ impl Board {
             if ep_str.len() == 2 {
                 if let (Ok(ep_file), Ok(ep_rank)) = 
                     (File::from_str(&ep_str[0..1]), Rank::from_str(&ep_str[1..2])) {
-                        en_passant_target_square = Some((ep_rank.to_index() * 8 + ep_file.to_index()) as genmove::Square);
+                        en_passant_target_square = Some((ep_rank.to_index() * 8 + ep_file.to_index()) as Square);
                 }
             }
         }
@@ -212,14 +216,25 @@ impl Board {
 
         board
     }
+    /// Construct a board from a FEN string.
+    ///
     /// ```
-    /// use engine::Board;
-    /// let fen = "rnbqkbnr/pppppppp/8/8/4p3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1 ";
-    /// 
-    /// let board = Board::parse_fen(fen);
-    /// board.print(fen);
-    /// ```
-
+    /// use board::Board;
+    /// use std::str::FromStr;
+    /// use std::error::Error;
+    ///
+    /// # fn main() -> Result<(), Error> {
+    ///
+    /// // This is no longer supported
+    /// let init_position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".to_owned()).expect("Valid FEN");
+    /// assert_eq!(init_position, Board::default());
+    ///
+    /// // This is the new way
+    /// let init_position_2 = Board::from_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
+    /// assert_eq!(init_position_2, Board::default());
+    /// # Ok(())
+    /// # }
+    /// ``
     pub fn print(&self , _fen: &str) {
         for rank in (0..8).rev() {
             print!("{:3}", rank + 1);
