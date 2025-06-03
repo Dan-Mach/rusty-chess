@@ -2,7 +2,7 @@ use crate::color:: Color;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Hash, Ord)]
-//chess piecees 
+//chess piecees
 pub enum Piece {
     Pawn,
     Knight,
@@ -10,12 +10,11 @@ pub enum Piece {
     Rook,
     Queen,
     King,
+
 }
 
-/// How many piece types are there?
 pub const NUM_PIECES: usize = 6;
 
-/// An array representing each piece type, in order of ascending value.
 pub const ALL_PIECES: [Piece; NUM_PIECES] = [
     Piece::Pawn,
     Piece::Knight,
@@ -25,14 +24,11 @@ pub const ALL_PIECES: [Piece; NUM_PIECES] = [
     Piece::King,
 ];
 
-/// How many ways can I promote?
 pub const NUM_PROMOTION_PIECES: usize = 4;
 
-/// What pieces can I promote to?
 pub const PROMOTION_PIECES: [Piece; 4] = [Piece::Queen, Piece::Knight, Piece::Rook, Piece::Bishop];
 
 impl Piece {
-    /// Convert the `Piece` to a `usize` for table lookups.
     #[inline]
     pub fn to_index(&self) -> usize {
         *self as usize
@@ -50,19 +46,21 @@ impl Piece {
     #[inline]
     pub fn to_string(&self, color: Color) -> String {
         let piece = format!("{}", self);
-        if color == Color::White {
+        if color == Color::White { 
             piece.to_uppercase()
         } else {
             piece
         }
     }
-
-    pub const  majPce:[Piece;3]  = [
+    pub const MAJ_PCE:[Piece;3]  = [ 
         Piece::Queen, Piece::King, Piece::Rook
     ];
-    pub const minPce:[Piece;3] = [
+    pub const MIN_PCE:[Piece;3] = [
         Piece::Bishop, Piece::Knight, Piece::Pawn
     ];
+    pub fn iter() -> impl Iterator<Item=Piece> {
+        ALL_PIECES.iter().copied()
+    }
 }
 
 impl fmt::Display for Piece {
@@ -71,32 +69,39 @@ impl fmt::Display for Piece {
             f,
             "{}",
             match *self {
-                Piece::Pawn => "p",
-                Piece::Knight => "n",
-                Piece::Bishop => "b",
-                Piece::Rook => "r",
-                Piece::Queen => "q",
-                Piece::King => "k",
+                Piece::Pawn => "P",
+                Piece::Knight => "N",
+                Piece::Bishop => "B",
+                Piece::Rook => "R",
+                Piece::Queen => "Q",
+                Piece::King => "K",
             }
         )
     }
-}
+} 
 
-impl Piece {
-    pub fn iter() -> impl Iterator<Item= Piece> {
-        [
-            Piece::Pawn, 
-            Piece::Knight,
-            Piece::Bishop,
-            Piece::Rook,
-            Piece::Queen,
-            Piece::King,
-        ].into_iter()
+#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
+pub struct ColoredPiece {
+    pub kind: Piece,
+    pub color: Color,
+}
+impl ColoredPiece {
+    pub fn new(kind: Piece, color: Color) -> Self {
+        ColoredPiece { kind, color }
+    }
+
+    pub fn to_char(&self) -> char {
+        let mut c = match self.kind {
+            Piece::Pawn => 'p',
+            Piece::Knight => 'n',
+            Piece::Bishop => 'b',
+            Piece::Rook => 'r',
+            Piece::Queen => 'q',
+            Piece::King => 'k',
+        };
+        if self.color == Color::Black {
+            c = c.to_ascii_lowercase();
+        }
+        c
     }
 }
-
-
-
-
-
-   

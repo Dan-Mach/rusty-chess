@@ -1,6 +1,3 @@
-// src/lib.rs (or main.rs if it's the crate root for these modules)
-
-// ... your other mods ...
 mod board;
 pub use crate::board::*;
 
@@ -21,7 +18,6 @@ pub use crate::genmove::*;
 
 mod error;
 pub use crate::error::Error;
-
 
 mod bitboard;
 pub use crate::bitboard::*;

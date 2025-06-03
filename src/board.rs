@@ -1,260 +1,222 @@
-use crate::pieces::{Piece, NUM_PIECES};
-use crate::color::{Color, NUM_COLORS};
-use crate::bitboard;
-use crate::rank::Rank;
-use crate::file::File;
-use std::str::FromStr;
-use crate::genmove::{Move, MoveList, Square }
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+use std::fmt; // For Display trait
+use crate::color::Color;
+use crate::pieces::{Piece as PieceKindEnum, ColoredPiece}; 
+#[derive(Clone, Debug)]
 pub struct Board {
-    squares:[[Option<Piece>;8]; NUM_PIECES],
-    pieces: [u64; NUM_PIECES],
-    color_combined: [u64; NUM_COLORS],
-    combined: u64,
-    side_to_move: Color,
-    en_passant_target_square: Option<Square>,
-
+    pub squares: [[Option<ColoredPiece>; 8]; 8],
+    pub active_color: Color,
+    pub castling_kingside_white: bool,
+    pub castling_queenside_white: bool,
+    pub castling_kingside_black: bool,
+    pub castling_queenside_black: bool,
+    pub en_passant_target: Option<(usize, usize)>, // (rank_idx, file_idx)
+    pub halfmove_clock: u32,
+    pub fullmove_number: u32,
 }
-impl Default for Board {
-    #[inline]
-    fn default() -> Board {
-        Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-        .expect("valid position")
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FenParseError {
+    InvalidFormat(String),
+    InvalidPiece(char),
+    InvalidRankLength(String),
+    TooManyParts,
+    NotEnoughParts,
+    InvalidActiveColor(String),
+    InvalidCastlingRights(String),
+    InvalidEnPassantTarget(String),
+    InvalidHalfmoveClock(String),
+    InvalidFullmoveNumber(String),
+}
+
+impl std::fmt::Display for FenParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FenParseError::InvalidFormat(s) => write!(f, "Invalid FEN format: {}", s),
+            FenParseError::InvalidPiece(c) => write!(f, "Invalid piece character in FEN: '{}'", c),
+            FenParseError::InvalidRankLength(s) => write!(f, "Invalid rank in FEN (files do not sum to 8): '{}'", s),
+            FenParseError::TooManyParts => write!(f, "Too many parts in FEN string"),
+            FenParseError::NotEnoughParts => write!(f, "Not enough parts in FEN string (expected 6)"),
+            FenParseError::InvalidActiveColor(s) => write!(f, "Invalid active color: {}", s),
+            FenParseError::InvalidCastlingRights(s) => write!(f, "Invalid castling rights: {}", s),
+            FenParseError::InvalidEnPassantTarget(s) => write!(f, "Invalid en passant target: {}", s),
+            FenParseError::InvalidHalfmoveClock(s) => write!(f, "Invalid halfmove clock: {}", s),
+            FenParseError::InvalidFullmoveNumber(s) => write!(f, "Invalid fullmove number: {}", s),
+        }
     }
 }
+
+impl std::error::Error for FenParseError {}
 
 impl Board {
-    pub fn generate_moves(&self) -> MoveList {
-        let mut moves = MoveList::new();
-        let current_player = self.side_to_move;
-
-        // Iterate through all pieces of the current player
-        // For now, let's specifically target pawns
-        self.generate_pawn_moves(&mut moves, current_player);
-        // self.generate_knight_moves(&mut moves, current_player);
-        // self.generate_bishop_moves(&mut moves, current_player);
-        // self.generate_rook_moves(&mut moves, current_player);
-        // self.generate_queen_moves(&mut moves, current_player);
-        // self.generate_king_moves(&mut moves, current_player);
-
-        moves
-    }
-    fn generate_pawn_moves(&self, moves: &mut MoveList, player: Color) {
-        if player != Color::White {
-            // We'll handle black pawns later or in a separate block
-            return;
-        }
-
-        let white_pawns_bb = self.pieces[Piece::Pawn.to_index()] & self.color_combined[Color::White.to_index()];
-        let opponent_pieces_bb = self.color_combined[Color::Black.to_index()];
-        let all_occupied_bb = self.combined;
-
-        // --- Pre-calculate file masks to prevent wrap-around captures ---
-        const NOT_A_FILE: u64 = 0xfefefefefefefefe; // ~ (File A bitboard)
-        const NOT_H_FILE: u64 = 0x7f7f7f7f7f7f7f7f; // ~ (File H bitboard)
-
-        let mut pawns_to_process = white_pawns_bb;
-        while pawns_to_process != 0 {
-            let from_square = bitboard::pop_bit(&mut pawns_to_process) as Square;
-            let current_rank_index = from_square / 8; // 0-indexed rank (0=Rank1, 1=Rank2, ..., 7=Rank8)
-
-            // 1. Single Pawn Push (White)
-            let single_push_target = from_square + 8;
-            if single_push_target < 64 { // Ensure it's on the board
-                if (all_occupied_bb & (1u64 << single_push_target)) == 0 { // If target square is empty
-                    if current_rank_index == 6 { // Pawn is on Rank 7, pushing to Rank 8 (promotion)
-                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Queen));
-                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Rook));
-                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Bishop));
-                        moves.push(Move::new_promotion(from_square, single_push_target, Piece::Knight));
-                    } else {
-                        moves.push(Move::new_quiet(from_square, single_push_target));
-                    }
-
-                    // 2. Double Pawn Push (White) - Can only happen if single push is also possible
-                    if current_rank_index == 1 { // Pawn is on Rank 2 (starting rank for white)
-                        let double_push_target = from_square + 16;
-                        if (all_occupied_bb & (1u64 << double_push_target)) == 0 { // If double target is empty
-                            // This move would set an en passant target square for the next turn.
-                            // We'll add that flag/detail to the Move struct later.
-                            moves.push(Move::new_quiet(from_square, double_push_target));
-                        }
-                    }
-                }
-            }
-
-            // 3. Pawn Captures (White)
-            // Capture Left (from white's perspective: e.g., d4 to c5, from_square + 7)
-            if (from_square & 7) != 0 { // Check if not on A-File (file index 0)
-                let capture_left_target = from_square + 7;
-                if capture_left_target < 64 { // Ensure it's on the board
-                    if (opponent_pieces_bb & (1u64 << capture_left_target)) != 0 { // If opponent piece is on target
-                        if current_rank_index == 6 { // Pawn on Rank 7, capturing onto Rank 8 (promotion)
-                            moves.push(Move::new_promotion(from_square, capture_left_target, Piece::Queen));
-                            moves.push(Move::new_promotion(from_square, capture_left_target, Piece::Rook));
-                            // ... Bishop, Knight promotions
-                        } else {
-                            moves.push(Move::new_quiet(from_square, capture_left_target));
-                        }
-                    }
-                    // TODO: Add En Passant capture check for capture_left_target
-                    // if capture_left_target == self.en_passant_target_square { ... }
-                }
-            }
-
-            // Capture Right (from white's perspective: e.g., d4 to e5, from_square + 9)
-            if (from_square & 7) != 7 { // Check if not on H-File (file index 7)
-                let capture_right_target = from_square + 9;
-                if capture_right_target < 64 { // Ensure it's on the board
-                    if (opponent_pieces_bb & (1u64 << capture_right_target)) != 0 { // If opponent piece is on target
-                        if current_rank_index == 6 { // Pawn on Rank 7, capturing onto Rank 8 (promotion)
-                            moves.push(Move::new_promotion(from_square, capture_right_target, Piece::Queen));
-                            moves.push(Move::new_promotion(from_square, capture_right_target, Piece::Rook));
-                            // ... Bishop, Knight promotions
-                        } else {
-                            moves.push(Move::new_quiet(from_square, capture_right_target));
-                        }
-                    }
-                    // TODO: Add En Passant capture check for capture_right_target
-                    // if capture_right_target == self.en_passant_target_square { ... }
-                }
-            }
-        }
-        // --- End of White Pawn Move Generation ---
-    }
-    pub fn parse_fen(fen: &str) -> Self {
-        let mut pieces = [0; NUM_PIECES];
-        let mut color_combined = [0; NUM_COLORS];
-        let mut combined:u64 = 0;
-        let mut side_to_move = Color::White;
-        let mut en_passant_target_square: Option<Square> = None;
-        let mut squares = [[None; 8]; 8];
-        let sections: Vec<&str> = fen.split_whitespace().collect();
-        let ranks:Vec<&str> =sections[0].split('/').collect();
-    
-        for (rank_index, &rank) in ranks.iter().enumerate() {
-            let mut file = 0;
-            for c in rank.chars() {
-                if let Some(d) = c.to_digit(10) {
-                    file += d as usize;
-                }
-                else {
-                    let piece = match c {
-                        'P' => Some((Piece::Pawn, Color::White)),
-                        'p' => Some((Piece::Pawn, Color::Black)),
-                        'N' => Some((Piece::Knight, Color::White)),
-                        'n' => Some((Piece::Knight, Color::Black)),
-                        'B' => Some((Piece::Bishop, Color::White)),
-                        'b' => Some((Piece::Bishop, Color::Black)),
-                        'R' => Some((Piece::Rook, Color::White)),
-                        'r' => Some((Piece::Rook, Color::Black)),
-                        'Q' => Some((Piece::Queen, Color::White)),
-                        'q' => Some((Piece::Queen, Color::Black)),
-                        'K' => Some((Piece::King, Color::White)),
-                        'k' => Some((Piece::King, Color::Black)),
-                        _=> None,
-                    };
-    
-                    if let Some((p, color)) = piece {
-                        let square = (7 - rank_index) * 8 + file;
-                        pieces[p.to_index()] |= 1 << square;
-                        color_combined[color.to_index()] |= 1 << square;
-                        combined |= 1 << square;
-                        squares[7 - rank_index][file] = Some(p);
-                    }
-                    file += 1;
-                }
-            }
-        }
-        if sections[1] == "b" {
-            side_to_move = Color::Black;
-        }
-        if sections.len() > 3 && sections[3] != "-" {
-            let ep_str = sections[3];
-            if ep_str.len() == 2 {
-                if let (Ok(ep_file), Ok(ep_rank)) = 
-                    (File::from_str(&ep_str[0..1]), Rank::from_str(&ep_str[1..2])) {
-                        en_passant_target_square = Some((ep_rank.to_index() * 8 + ep_file.to_index()) as Square);
-                }
-            }
-        }
+    fn new_empty() -> Self {
         Board {
-            squares,
-            pieces,
-            color_combined,
-            combined,
-            side_to_move,
-            en_passant_target_square,
+            squares: [[None; 8]; 8],
+            active_color: Color::White,
+            castling_kingside_white: false,
+            castling_queenside_white: false,
+            castling_kingside_black: false,
+            castling_queenside_black: false,
+            en_passant_target: None,
+            halfmove_clock: 0,
+            fullmove_number: 1,
         }
     }
+    fn fen_char_to_colored_piece(c:char) -> Option<ColoredPiece> {
+        let color = if c.is_uppercase() { Color::White } else { Color::Black };
+        let kind = match c.to_ascii_lowercase() {
+            'p' => PieceKindEnum::Pawn,
+            'n' => PieceKindEnum::Knight,
+            'b' => PieceKindEnum::Bishop,
+            'r' => PieceKindEnum::Rook,
+            'q' => PieceKindEnum::Queen,
+            'k' => PieceKindEnum::King,
+            _ => return None, // Invalid piece character
+        };
+        Some(ColoredPiece::new(kind, color))
+    }
+    pub fn parse_fen(fen_string: &str) -> Result<Board, FenParseError> {
+        let parts: Vec<&str> = fen_string.split_whitespace().collect();
+        if parts.len() != 6 {
+            return Err(FenParseError::NotEnoughParts);
+        }
 
-    pub fn new(_fen: &str) -> Self {
-        let mut board = Board {
-            squares: [[None;8]; 8 ],
-            pieces: [0; NUM_PIECES],
-            color_combined: [0; NUM_COLORS],
-            combined: 0,
-            side_to_move: Color::White,
-            en_passant_target_square: None,
+        let mut board = Board::new_empty();
+        let piece_placement = parts[0];
+        let mut rank_idx = 0;
+        for rank_str in piece_placement.split('/') {
+            if rank_idx >= 8 {
+                return Err(FenParseError::InvalidFormat("Too many ranks (more than 7 '/' separators)".to_string()));
+            }
+            let mut file_idx = 0;
+            for char_code in rank_str.chars() {
+                if file_idx >= 8 && !char_code.is_ascii_digit() {
+                     return Err(FenParseError::InvalidRankLength(format!("Rank {} has too many items before processing char '{}'", rank_idx + 1, char_code)));
+                }
+
+                if let Some(digit) = char_code.to_digit(10) {
+                    if !(1..=8).contains(&digit) {
+                        return Err(FenParseError::InvalidFormat(format!("Invalid digit '{}' in piece placement.", char_code)));
+                    }
+                    if file_idx + (digit as usize) > 8 {
+                        return Err(FenParseError::InvalidRankLength(format!("Rank {} digit '{}' causes file overflow.", rank_idx + 1, digit)));
+                    }
+                    file_idx += digit as usize;
+                } else {
+                    if file_idx >= 8 {
+                        return Err(FenParseError::InvalidRankLength(format!("Rank {} trying to place piece at file {}, which is out of bounds.", rank_idx + 1, file_idx + 1)));
+                    }
+                    match Board::fen_char_to_colored_piece(char_code) {
+                        Some(colored_piece) => {
+                            board.squares[rank_idx][file_idx] = Some(colored_piece);
+                            file_idx += 1;
+                        }
+                        None => return Err(FenParseError::InvalidPiece(char_code)),
+                    }
+                }
+            }
+            if file_idx != 8 {
+                return Err(FenParseError::InvalidRankLength(format!("Rank {} (from top) did not sum to 8 files. Parsed: '{}'", rank_idx +1 , rank_str)));
+            }
+            rank_idx += 1;
+        }
+        if rank_idx != 8 {
+            return Err(FenParseError::InvalidFormat(format!("Expected 8 ranks, found {}", rank_idx)));
+        }
+
+        board.active_color = match parts[1] {
+            "w" => Color::White,
+            "b" => Color::Black,
+            _ => return Err(FenParseError::InvalidActiveColor(parts[1].to_string())),
         };
 
-        for file in 0..8 {
-            board.squares[1][file] = Some(Piece::Pawn);
-            board.squares[6][file] = Some(Piece::Pawn);
-        }
-        
-
-        let back_rank = [
-            Piece::Rook, Piece::Knight, Piece::Bishop, Piece::Queen, 
-            Piece::King, Piece::Bishop, Piece::Knight, Piece::Rook
-        ];
-       
-        for( file, &piece) in back_rank.iter().enumerate() {
-            board.squares[0][file] = Some(piece);
-            board.squares[7][file] = Some(piece);
-        }
-
-        board
-    }
-    /// Construct a board from a FEN string.
-    ///
-    /// ```
-    /// use board::Board;
-    /// use std::str::FromStr;
-    /// use std::error::Error;
-    ///
-    /// # fn main() -> Result<(), Error> {
-    ///
-    /// // This is no longer supported
-    /// let init_position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".to_owned()).expect("Valid FEN");
-    /// assert_eq!(init_position, Board::default());
-    ///
-    /// // This is the new way
-    /// let init_position_2 = Board::from_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
-    /// assert_eq!(init_position_2, Board::default());
-    /// # Ok(())
-    /// # }
-    /// ``
-    pub fn print(&self , _fen: &str) {
-        for rank in (0..8).rev() {
-            print!("{:3}", rank + 1);
-            print!("  ");
-            for file in 0..8 {
-                match self.squares[rank][file] {
-                    Some(pieces) => {
-                        let color = if rank < 2 {Color::White}
-                        else {Color::Black};
-                        print!("{:4}", pieces.to_string(color));
-                    },
-                    None => print!(".   "),
+        // Part 3: Castling availability
+        let castling_str = parts[2];
+        if castling_str != "-" {
+            for c in castling_str.chars() {
+                match c {
+                    'K' => board.castling_kingside_white = true,
+                    'Q' => board.castling_queenside_white = true,
+                    'k' => board.castling_kingside_black = true,
+                    'q' => board.castling_queenside_black = true,
+                    _ => return Err(FenParseError::InvalidCastlingRights(castling_str.to_string())),
                 }
             }
-            println!();
         }
-        println!("     _____________________________");
-        println!("     a   b   c   d   e   f   g   h");
-        //for file in File::iter() {
-         ///////print!("    {}", file.)
-        //}
+
+        // Part 4: En passant target square
+        let en_passant_str = parts[3];
+        if en_passant_str != "-" {
+            if en_passant_str.len() != 2 {
+                return Err(FenParseError::InvalidEnPassantTarget(en_passant_str.to_string()));
+            }
+            let mut chars = en_passant_str.chars();
+            let file_char = chars.next().unwrap();
+            let rank_char = chars.next().unwrap();
+
+            let file = (file_char as u8).wrapping_sub(b'a') as usize;
+            let rank_digit = rank_char.to_digit(10).ok_or_else(|| FenParseError::InvalidEnPassantTarget(en_passant_str.to_string()))?;
+
+            if file >= 8 || !((rank_digit == 3 && board.active_color == Color::Black) || (rank_digit == 6 && board.active_color == Color::White)) {
+                 return Err(FenParseError::InvalidEnPassantTarget(format!("Invalid en passant square or logic: {}",en_passant_str)));
+            }
+            let rank = 8 - rank_digit as usize;
+            board.en_passant_target = Some((rank, file));
+        }
+
+        // Part 5: Halfmove clock
+        board.halfmove_clock = parts[4].parse().map_err(|_| FenParseError::InvalidHalfmoveClock(parts[4].to_string()))?;
+
+        // Part 6: Fullmove number
+        board.fullmove_number = parts[5].parse().map_err(|_| FenParseError::InvalidFullmoveNumber(parts[5].to_string()))?;
+        if board.fullmove_number == 0 {
+            return Err(FenParseError::InvalidFullmoveNumber("Fullmove number cannot be 0".to_string()));
+        }
+
+        Ok(board)
+    }
+}
+
+impl fmt::Display for Board {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  +---+---+---+---+---+---+---+---+")?;
+        for rank_idx in 0..8 {
+            write!(f, "{} |", 8 - rank_idx)?;
+            for file_idx in 0..8 {
+                match self.squares[rank_idx][file_idx] {
+                    Some(piece) => write!(f, " {} |", piece.to_char())?,
+                    None => write!(f, "   |")?,
+                }
+            }
+            writeln!(f)?;
+            writeln!(f, "  +---+---+---+---+---+---+---+---+")?;
+        }
+        writeln!(f, "    a   b   c   d   e   f   g   h")?;
+        writeln!(f)?;
+
+        writeln!(f, "Active Color: {:?}", self.active_color)?;
+        write!(f, "Castling: ")?;
+        let mut castling_available = false;
+        if self.castling_kingside_white { write!(f, "K")?; castling_available = true; }
+        if self.castling_queenside_white { write!(f, "Q")?; castling_available = true; }
+        if self.castling_kingside_black { write!(f, "k")?; castling_available = true; }
+        if self.castling_queenside_black { write!(f, "q")?; castling_available = true; }
+        if !castling_available {
+            write!(f, "-")?;
+        }
+        writeln!(f)?;
+
+        write!(f, "En Passant: ")?;
+        if let Some((ep_rank_idx, ep_file_idx)) = self.en_passant_target {
+            let file_char = (b'a' + ep_file_idx as u8) as char;
+            let rank_char = (8 - ep_rank_idx).to_string();
+            writeln!(f, "{}{}", file_char, rank_char)?;
+        } else {
+            writeln!(f, "-")?;
+        }
+
+        writeln!(f, "Halfmove Clock: {}", self.halfmove_clock)?;
+        writeln!(f, "Fullmove Number: {}", self.fullmove_number)?;
+
+        Ok(())
     }
 }
