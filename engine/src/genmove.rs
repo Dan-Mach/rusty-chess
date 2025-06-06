@@ -10,7 +10,7 @@ pub struct Move {
 }
 
 impl Move {
-    pub fn new(from: Square, to: Square) -> Self {
+    pub fn new(from: Square, to: Square, promotion:Option<Piece>) -> Self {
         Move { from, to, promotion: None }
     }
 
