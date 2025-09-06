@@ -10,17 +10,12 @@ pub enum Color {
 pub const NUM_COLORS: usize = 2;
 pub const ALL_COLOR: [Color;NUM_COLORS] = [Color::White, Color::Black];
 
-
-    
-
 impl Color {
     //white side
     #[inline]
     pub fn to_index(&self) -> usize {
         *self as usize
     }
-
-
     #[inline]
     pub fn from_index(i: usize) -> Color {
         match i % 2 {
@@ -29,7 +24,6 @@ impl Color {
             _=> unreachable!(),
         }
     }
-
     pub fn iter() -> impl Iterator<Item = Color> {
         ALL_COLOR.iter().copied()
     }
@@ -50,7 +44,6 @@ impl Color {
             Color::Black => Rank::First,
         }
     }
-
     /// Convert a `Color` to my second rank, which represents the starting rank for my pawns.
     #[inline]
     pub fn to_second_rank(&self) -> Rank {
@@ -59,7 +52,7 @@ impl Color {
             Color::Black => Rank::Seventh,
         }
     }
-       /// Convert a `Color` to my fourth rank, which represents the rank of my pawns when
+    /// Convert a `Color` to my fourth rank, which represents the rank of my pawns when
     /// moving two squares forward.
     #[inline]
     pub fn to_fourth_rank(&self) -> Rank {
@@ -79,7 +72,6 @@ impl Color {
     }
 
 }
-
 impl Not for Color {
     type Output = Color;
 

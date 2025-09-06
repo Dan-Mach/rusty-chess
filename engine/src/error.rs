@@ -1,6 +1,5 @@
 use failure::Fail;
 
-
 #[derive(Clone, Debug, Fail, PartialEq, Eq)]
 pub enum FenParseError {
     #[fail(display = "Invalid FEN format structure: {}", _0)]

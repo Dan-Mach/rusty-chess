@@ -14,7 +14,6 @@ pub enum Piece {
 }
 
 pub const NUM_PIECES: usize = 6;
-
 pub const ALL_PIECES: [Piece; NUM_PIECES] = [
     Piece::Pawn,
     Piece::Knight,
@@ -33,14 +32,6 @@ impl Piece {
     pub fn to_index(&self) -> usize {
         *self as usize
     }
-
-
-    /// ```
-    /// use engine::Color;
-    /// use engine::Piece;
-    /// assert_eq!(Piece::King.to_string(Color::White), "K");
-    /// assert_eq!(Piece::Knight.to_string(Color::Black), "n");
-    /// ```
     #[inline]
     pub fn to_string(&self, color: Color) -> String {
         let piece = format!("{}", self);

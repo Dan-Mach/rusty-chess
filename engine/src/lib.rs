@@ -8,6 +8,7 @@ mod error;
 mod bitboard;
 mod coordinates;
 mod move_generation;
+mod evaluate;
 
 pub use crate::board::*;
 pub use crate::pieces::*;
@@ -19,4 +20,6 @@ pub use crate::error::*;
 pub use crate::bitboard::*;
 pub use crate::coordinates::*;
 pub use crate::move_generation::*;
+pub use crate::evaluate::*;
+
   

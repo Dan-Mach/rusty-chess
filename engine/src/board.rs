@@ -1,16 +1,14 @@
-// src/board.rs
-
-use std::fmt;
 use crate::color::Color;
 use crate::pieces::{Piece as PieceKindEnum, ColoredPiece, PROMOTION_PIECES};
 use crate::genmove::{Move, Square, MoveList};
 use crate::rank::Rank;
 use crate::file::File;
 use crate::coordinates::{array_indices_to_square, square_to_array_indices, square_to_rank_file_enums,rank_file_enums_to_square};
-use crate::error::{Error, FenParseError}; // Assuming FenParseError is defined in error.rs
+use crate::error::{Error, FenParseError}; 
+
 #[derive(Debug, Clone, Copy)]
 pub struct PreviousBoardState {
-     pub captured_piece: Option<ColoredPiece>,
+    pub captured_piece: Option<ColoredPiece>,
     pub previous_en_passant_target: Option<(usize, usize)>, // Stores (array_rank_idx, array_file_idx)
     pub castling_kingside_white: bool,
     pub castling_queenside_white: bool,
@@ -197,7 +195,6 @@ impl Board {
             }
         }
 
-        //4b
         let (from_r_enum, from_f_enum) = square_to_rank_file_enums(mv.from);
         let (to_r_enum, to_f_enum) = square_to_rank_file_enums(mv.to);
         if (to_r_enum.to_index() as i8 - from_f_enum.to_index() as i8).abs() == 2 {
@@ -211,11 +208,7 @@ impl Board {
                 let ep_sq_to_check = array_indices_to_square(ep_indices_to_check.0, ep_indices_to_check.1);
                 if mv.to == ep_sq_to_check { // Pawn landed on the previous EP target square
                     let captured_pawn_arr_r = if piece_moved.color == Color::White { to_arr_r + 1 } else { to_arr_r - 1 };
-                    actual_captured_piece_for_ep_logic = self.squares[captured_pawn_arr_r][to_arr_f].take(); // Take the EP captured pawn
-                    // The halfmove clock should be 0 due to pawn move, capture nature handled by prev_state.captured_piece
-                    // if we consider this a "capture" for clock purposes.
-                    // The current halfmove logic already resets for pawn moves.
-                    // If an EP capture specifically counts as a "capture" for halfmove, it's covered.
+                    actual_captured_piece_for_ep_logic = self.squares[captured_pawn_arr_r][to_arr_f].take(); 
                 }
                 
             }
@@ -224,14 +217,8 @@ impl Board {
         if piece_moved.kind == PieceKindEnum::Pawn || prev_state.captured_piece.is_some() || actual_captured_piece_for_ep_logic.is_some() {
             self.halfmove_clock = 0;
         }
-        // Note: The original `prev_state.captured_piece` was for the TO square. If it's an EP capture,
-        // the TO square was empty. So `actual_captured_piece_for_ep_logic` is key here if it has different reset conditions.
-        // Simpler: pawn moves always reset the clock. Captures (any kind) always reset.
-        // The current logic `if piece_moved.kind == PieceKindEnum::Pawn || prev_state.captured_piece.is_some()`
-        // needs to be augmented if EP captures are not covered by `prev_state.captured_piece` but should reset the clock.
-        // Actually, any pawn move resets it, so EP is covered.
 
-        // 5. Handle Castling (Move the Rook)
+        // Handle Castling 
         if piece_moved.kind == PieceKindEnum::King && (to_arr_f as i8 - from_arr_f as i8).abs() == 2 {
             let (rook_from_f_idx, rook_to_f_idx) = if to_arr_f > from_arr_f { (File::H.to_index(), File::F.to_index()) } else { (File::A.to_index(), File::D.to_index()) };
             if let Some(rook_piece) = self.squares[from_arr_r][rook_from_f_idx].take() {
@@ -239,7 +226,7 @@ impl Board {
             }
         }
 
-        // 6. Update Castling Rights (These are updated *after* capturing previous state)
+        // Update Castling Rights after the move
         if piece_moved.kind == PieceKindEnum::King {
             if piece_moved.color == Color::White { self.castling_kingside_white = false; self.castling_queenside_white = false; } 
             else { self.castling_kingside_black = false; self.castling_queenside_black = false; }
@@ -258,13 +245,13 @@ impl Board {
             }
         }
         
-        // 7. Update Fullmove Number
+        // Update Fullmove Number
         if self.active_color == Color::Black { self.fullmove_number += 1; }
 
-        // 8. Switch Active Color
+        // Switch Active Color
         self.active_color = !self.active_color;
 
-        prev_state // Return the captured state
+        prev_state 
     }
     pub(crate) fn find_king_square(&self, color: Color) -> Option<Square> {
         for r_idx in 0..8 {
@@ -276,36 +263,28 @@ impl Board {
                 }
             }
         }
-        None // King not found
+        None 
     }
     pub fn generate_legal_moves(&self) -> MoveList {
         let pseudo_legal_moves = self.generate_pseudo_legal_moves();
-        let mut legal_moves = MoveList::new(); // Assuming MoveList is Vec<Move>
-
-        let current_player_color = self.active_color;
-        // Assuming you have `impl Not for Color` to get the opponent's color easily:
-        // e.g., in color.rs: `impl Not for Color { type Output = Self; fn not(self) -> Self::Output { ... } }`
+        let mut legal_moves = MoveList::new(); 
+        let current_player_color = self.active_color;     
         let opponent_color = !current_player_color; 
 
         for mv in pseudo_legal_moves.iter() { // Iterate by reference as Move is Copy
-            // 1. Simulate the move on a temporary board
+            //Simulate the move on a temporary board
             let mut temp_board = self.clone(); // Requires Board to derive Clone
             temp_board.make_move(mv); // Use the full make_move method
 
-            // 2. Find the current player's king on this temporary board
+            // Find the current player's king on this temporary board
             //    (It's the king of the player who just made the move `mv`)
             if let Some(king_sq_after_move) = temp_board.find_king_square(current_player_color) {
                 // 3. Check if that king is attacked by the opponent on the temporary board
                 if !temp_board.is_square_attacked(king_sq_after_move, opponent_color) {
-                    legal_moves.push(*mv); // Move is Copy, so dereference to push the Move itself
+                    legal_moves.push(*mv); 
                 }
             } else {
-                // This case (king not found after a pseudo-legal move) should be highly unusual
-                // in a valid game if pseudo-legal moves don't allow capturing one's own king.
-                // It might indicate an issue if a pseudo-legal move incorrectly removes the king,
-                // or if the board state was already invalid.
-                // For robustness, you might log this or handle it as an error,
-                // but in normal operation, a king should always be found.
+                println!("Error: King not found for {:?}", current_player_color);
             }
         }
         legal_moves
@@ -399,15 +378,14 @@ impl Board {
             }
         };
         
-        // 1. Single Square Push
+        // Single Square Push
         let one_step_fwd_rank_val = from_rank_val + forward_delta_rank;
         if one_step_fwd_rank_val >= 0 && one_step_fwd_rank_val <= 7 { // Check rank boundary
             let target_sq_one_step: Square = (one_step_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
             let (target_arr_r, target_arr_f) = square_to_array_indices(target_sq_one_step);
             if self.squares[target_arr_r][target_arr_f].is_none() {
                 add_move_with_promotion_check(from_sq, one_step_fwd_rank_val, from_file_val, moves);
-
-                // 2. Double Square Push
+                // Double Square Push
                 if from_rank_val == start_rank_val {
                     let two_steps_fwd_rank_val = from_rank_val + (2 * forward_delta_rank);
                     // No need to check boundary for two_steps_fwd_rank_val if one_step was valid from start rank
@@ -420,7 +398,7 @@ impl Board {
             }
         }
 
-        // 3. Diagonal Captures
+        //Diagonal Captures
         for df_capture in [-1i8, 1i8].iter() {
             let target_capture_rank_val = from_rank_val + forward_delta_rank;
             let target_capture_file_val = from_file_val + *df_capture;
@@ -438,7 +416,7 @@ impl Board {
             }
         }
         
-        // 4. En Passant Capture
+        //En Passant Capture
         if let Some(ep_target_sq_indices) = self.en_passant_target { // ep_target_sq_indices is (array_rank_idx, array_file_idx)
             let ep_target_sq = array_indices_to_square(ep_target_sq_indices.0, ep_target_sq_indices.1);
             let (ep_rank_enum, ep_file_enum) = square_to_rank_file_enums(ep_target_sq);
@@ -586,16 +564,8 @@ impl Board {
             // Move the piece back to its original square
             self.squares[from_arr_r][from_arr_f] = Some(piece_that_moved);
         }
-
-        // 6c. Restore captured piece (if any) to mv.to
-        // This includes pieces captured normally or the empty state if no capture.
         self.squares[to_arr_r][to_arr_f] = prev_state.captured_piece;
 
-        // 7. Undo Special Moves
-        // 7a. Undo En Passant Capture (restore the captured pawn)
-        // We need to know if the move *was* an en passant.
-        // A move is EP if a pawn moved diagonally to an empty square (prev_state.captured_piece was None on mv.to)
-        // AND mv.to was the previous_en_passant_target.
         if piece_that_moved.kind == PieceKindEnum::Pawn &&
            (from_arr_f != to_arr_f) && // Diagonal pawn move
            prev_state.captured_piece.is_none() && // Landed on an empty square
@@ -629,8 +599,7 @@ impl Board {
             if let Some(rook_piece) = self.squares[from_arr_r][rook_current_f_idx].take() {
                 self.squares[from_arr_r][rook_original_f_idx] = Some(rook_piece);
             } else {
-                // This would indicate a severe bug if the rook isn't where it should be after castling
-                // panic!("Unmake castling error: Rook not found at expected castled position!");
+                panic!("Unmake castling error: Rook not found at expected castled position!");
             }
         }
     }
@@ -680,14 +649,9 @@ impl Board {
 
         // 4. En Passant Target Square
         if let Some((ep_arr_r, ep_arr_f)) = self.en_passant_target {
-            // Convert array indices (where arr_r=0 is Rank 8, arr_r=7 is Rank 1)
-            // back to algebraic notation for FEN.
             let ep_square = array_indices_to_square(ep_arr_r, ep_arr_f);
             let (ep_rank_enum, ep_file_enum) = square_to_rank_file_enums(ep_square);
-            
-            // FEN rank is 1-8, file is a-h.
-            // ep_rank_enum.to_index() gives 0 for Rank 1, 7 for Rank 8.
-            // ep_file_enum.to_index() gives 0 for File A, 7 for File H.
+
             let file_char = (b'a' + ep_file_enum.to_index() as u8) as char;
             let rank_char = std::char::from_digit((ep_rank_enum.to_index() + 1) as u32, 10)
                 .expect("Rank index out of range for FEN char conversion");
@@ -695,7 +659,6 @@ impl Board {
         } else {
             fen_parts.push("-".to_string());
         }
-
         // 5. Halfmove Clock
         fen_parts.push(self.halfmove_clock.to_string());
 
@@ -703,51 +666,5 @@ impl Board {
         fen_parts.push(self.fullmove_number.to_string());
 
         fen_parts.join(" ")
-    }
-}
-
-// impl fmt::Display for Board remains the same
-impl fmt::Display for Board {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "  +---+---+---+---+---+---+---+---+")?;
-        for rank_idx in 0..8 {
-            write!(f, "{} |", 8 - rank_idx)?;
-            for file_idx in 0..8 {
-                match self.squares[rank_idx][file_idx] {
-                    Some(colored_piece) => write!(f, " {} |", colored_piece.to_char())?,
-                    None => write!(f, "   |")?,
-                }
-            }
-            writeln!(f)?;
-            writeln!(f, "  +---+---+---+---+---+---+---+---+")?;
-        }
-        writeln!(f, "    a   b   c   d   e   f   g   h")?;
-        writeln!(f)?;
-
-        writeln!(f, "Active Color: {:?}", self.active_color)?;
-        write!(f, "Castling: ")?;
-        let mut castling_available = false;
-        if self.castling_kingside_white { write!(f, "K")?; castling_available = true; }
-        if self.castling_queenside_white { write!(f, "Q")?; castling_available = true; }
-        if self.castling_kingside_black { write!(f, "k")?; castling_available = true; }
-        if self.castling_queenside_black { write!(f, "q")?; castling_available = true; }
-        if !castling_available {
-            write!(f, "-")?;
-        }
-        writeln!(f)?;
-
-        write!(f, "En Passant: ")?;
-        if let Some((ep_rank_idx, ep_file_idx)) = self.en_passant_target {
-            let file_char = (b'a' + ep_file_idx as u8) as char;
-            let rank_char = (8 - ep_rank_idx).to_string();
-            writeln!(f, "{}{}", file_char, rank_char)?;
-        } else {
-            writeln!(f, "-")?;
-        }
-
-        writeln!(f, "Halfmove Clock: {}", self.halfmove_clock)?;
-        writeln!(f, "Fullmove Number: {}", self.fullmove_number)?;
-
-        Ok(())
     }
 }
