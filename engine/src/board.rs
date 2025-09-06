@@ -27,6 +27,7 @@ pub struct Board {
     pub en_passant_target: Option<(usize, usize)>,
     pub halfmove_clock: u32,
     pub fullmove_number: u32,
+    pub move_history: Vec<(Move, PreviousBoardState)>,
 }
 
 impl Board {
@@ -41,6 +42,7 @@ impl Board {
             en_passant_target: None,
             halfmove_clock: 0,
             fullmove_number: 1,
+            move_history: Vec::new(),
         }
     }
 
@@ -160,7 +162,7 @@ impl Board {
 
         Ok(board)
     }
-     pub fn make_move(&mut self, mv: &Move) -> PreviousBoardState{
+    pub fn make_move(&mut self, mv: &Move) -> PreviousBoardState{
         let (from_arr_r, from_arr_f) = square_to_array_indices(mv.from);
         let (to_arr_r, to_arr_f) = square_to_array_indices(mv.to);
 
@@ -175,6 +177,7 @@ impl Board {
             castling_queenside_black: self.castling_queenside_black,
             previous_halfmove_clock: self.halfmove_clock,
         };
+        self.move_history.push((mv.clone(), prev_state));
         let mut actual_captured_piece_for_ep_logic = prev_state.captured_piece;
         self.en_passant_target = None; // Reset EP target after a move
         self.squares[to_arr_r][to_arr_f] = Some(piece_moved);
@@ -264,6 +267,14 @@ impl Board {
             }
         }
         None 
+    }
+    pub fn undo_move(&mut self) -> Result<(), &'static str> {
+        if let Some((mv, prev_state)) = self.move_history.pop() {
+            self.unmake_move(&mv, &prev_state);
+            Ok(())
+        } else {
+            Err("No move to undo")
+        }
     }
     pub fn generate_legal_moves(&self) -> MoveList {
         let pseudo_legal_moves = self.generate_pseudo_legal_moves();
