@@ -1,9 +1,7 @@
 // tests/move_generation_tests.rs
 
-// Import necessary items from your library crate (named 'engine' here)
-// Your lib.rs should be re-exporting these (e.g., via `pub use crate::board::Board;` etc.
-// or `pub use crate::board::*;`)
-use engine::{Board, Move, Square, Color}; // Assuming Piece (kind) isn't directly needed for this specific Move struct test
+// Import necessary items from the parent crate
+use crate::{Board, Move, Square, Color};
 // If Move struct used PieceKind for promotion, you'd import:
 // use engine::pieces::Piece as PieceKind; 
 use std::collections::HashSet;

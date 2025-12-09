@@ -24,3 +24,8 @@ pub use crate::move_generation::*;
 pub use crate::evaluate::*;
 pub use crate::search::*;
 
+#[cfg(test)]
+mod tests {
+    mod move_gen_test;
+    mod checkmate_test;
+}
