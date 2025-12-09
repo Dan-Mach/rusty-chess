@@ -25,7 +25,7 @@ impl Board {
                             }
                             PieceKindEnum::Bishop => {
                                 if self.is_bishop_attacking(attacker_current_sq, target_sq) {
-                                    return true;
+                                    return true;  
                                 }
                             }
                             PieceKindEnum::Rook => {

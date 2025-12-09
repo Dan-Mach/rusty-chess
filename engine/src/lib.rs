@@ -9,6 +9,7 @@ mod bitboard;
 mod coordinates;
 mod move_generation;
 mod evaluate;
+mod search;
 
 pub use crate::board::*;
 pub use crate::pieces::*;
@@ -21,5 +22,5 @@ pub use crate::bitboard::*;
 pub use crate::coordinates::*;
 pub use crate::move_generation::*;
 pub use crate::evaluate::*;
+pub use crate::search::*;
 
-  

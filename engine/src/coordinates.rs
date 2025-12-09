@@ -2,7 +2,7 @@
 use crate::rank::Rank;
 use crate::file::File;
 use crate::genmove::Square; // Assuming Square is u8 from genmove.rs
-/// Converts a Square (u8, 0-63, A1=0, H8=63) to (Rank, File) enums.
+
 pub fn square_to_rank_file_enums(square: Square) -> (Rank, File) {
     let rank_val = (square / 8) as usize;
     let file_val = (square % 8) as usize;
@@ -13,14 +13,12 @@ pub fn square_to_rank_file_enums(square: Square) -> (Rank, File) {
 pub fn rank_file_enums_to_square(rank: Rank, file: File) -> Square {
     (rank.to_index() * 8 + file.to_index()) as Square
 }
-
-/// Converts a Square (u8, 0-63, A1=0) to array indices (array_rank_idx, array_file_idx)
-/// for a board where array_rank_idx = 0 is the 8th rank (FEN's Rank 8).
+//converts a Square to an array indices
 pub fn square_to_array_indices(square: Square) -> (usize, usize) {
-    let rank_val = square / 8; // 0 for 1st rank (Rank::First), 7 for 8th rank (Rank::Eighth)
-    let file_val = square % 8; // 0 for A-file, 7 for H-file
+    let rank_val = (square / 8) as usize ;// 0 for 1st rank (Rank::First), 7 for 8th rank (Rank::Eighth)
+    let file_val = (square % 8) as usize; // 0 for A-file, 7 for H-file
 
-    let array_rank_idx = 7 - rank_val as usize;
+    let array_rank_idx = 7usize.saturating_sub(rank_val); 
     let array_file_idx = file_val as usize;
 
     (array_rank_idx, array_file_idx)

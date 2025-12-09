@@ -15,7 +15,6 @@ pub enum Rank {
 }
 
 pub const NUM_RANKS: usize = 8;
-
 pub const ALL_RANKS: [Rank; NUM_RANKS] = [
     Rank::First,
     Rank::Second,
@@ -26,8 +25,6 @@ pub const ALL_RANKS: [Rank; NUM_RANKS] = [
     Rank::Seventh,
     Rank::Eighth,
 ];
-
-
 impl  Rank {
     pub fn iter() -> impl DoubleEndedIterator<Item = Rank> {
         ALL_RANKS.iter().copied()
@@ -50,18 +47,17 @@ impl Rank {
             _ => unreachable!(),
         }
     }
-    /// Go one rank down.  If impossible, wrap around.
+
     #[inline]
     pub fn down(&self) -> Rank {
         Rank::from_index(self.to_index().wrapping_sub(1))
     }
-    /// Go one file up.  If impossible, wrap around.
+
     #[inline]
     pub fn up(&self) -> Rank {
         Rank::from_index(self.to_index() + 1)
     }
 
-    /// Convert this `Rank` into a `usize` between 0 and 7 (inclusive).
     #[inline]
     pub fn to_index(&self) -> usize {
         *self as usize
