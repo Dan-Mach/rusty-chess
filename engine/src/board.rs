@@ -344,19 +344,30 @@ impl Board {
     
     /// Update the game result based on the current position.
     /// This should be called after making a move to check for checkmate/stalemate.
+    /// 
+    /// Note: This method is separate from `make_move()` to avoid infinite recursion,
+    /// since `generate_legal_moves()` internally calls `make_move()` on temporary boards.
     pub fn update_game_result(&mut self) {
         if self.game_result != GameResult::InProgress {
             // Game already over, don't update
             return;
         }
         
-        if self.is_checkmate() {
-            // The current active player is in checkmate
-            // So the opponent (who just moved) wins
-            let winner = !self.active_color;
-            self.game_result = GameResult::Checkmate(winner);
-        } else if self.is_stalemate() {
-            self.game_result = GameResult::Stalemate;
+        // Generate legal moves once to avoid redundant computation
+        let legal_moves = self.generate_legal_moves();
+        let has_legal_moves = !legal_moves.is_empty();
+        
+        if !has_legal_moves {
+            // No legal moves - either checkmate or stalemate
+            if self.is_in_check() {
+                // The current active player is in checkmate
+                // So the opponent (who just moved) wins
+                let winner = !self.active_color;
+                self.game_result = GameResult::Checkmate(winner);
+            } else {
+                // Not in check but no legal moves - stalemate
+                self.game_result = GameResult::Stalemate;
+            }
         }
     }
     
