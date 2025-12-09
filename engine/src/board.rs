@@ -6,6 +6,13 @@ use crate::file::File;
 use crate::coordinates::{array_indices_to_square, square_to_array_indices, square_to_rank_file_enums,rank_file_enums_to_square};
 use crate::error::{Error, FenParseError}; 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameResult {
+    InProgress,
+    Checkmate(Color), // Color of the winner
+    Stalemate,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct PreviousBoardState {
     pub captured_piece: Option<ColoredPiece>,
@@ -28,6 +35,7 @@ pub struct Board {
     pub halfmove_clock: u32,
     pub fullmove_number: u32,
     pub move_history: Vec<(Move, PreviousBoardState)>,
+    pub game_result: GameResult,
 }
 
 impl Board {
@@ -43,6 +51,7 @@ impl Board {
             halfmove_clock: 0,
             fullmove_number: 1,
             move_history: Vec::new(),
+            game_result: GameResult::InProgress,
         }
     }
 
@@ -299,6 +308,58 @@ impl Board {
         }
         legal_moves
     }
+    
+    /// Check if the current player is in check
+    pub fn is_in_check(&self) -> bool {
+        let current_player_color = self.active_color;
+        let opponent_color = !current_player_color;
+        
+        if let Some(king_sq) = self.find_king_square(current_player_color) {
+            self.is_square_attacked(king_sq, opponent_color)
+        } else {
+            false
+        }
+    }
+    
+    /// Check if the current position is checkmate
+    pub fn is_checkmate(&self) -> bool {
+        // Checkmate requires:
+        // 1. The current player is in check
+        // 2. The current player has no legal moves
+        self.is_in_check() && self.generate_legal_moves().is_empty()
+    }
+    
+    /// Check if the current position is stalemate
+    pub fn is_stalemate(&self) -> bool {
+        // Stalemate requires:
+        // 1. The current player is NOT in check
+        // 2. The current player has no legal moves
+        !self.is_in_check() && self.generate_legal_moves().is_empty()
+    }
+    
+    /// Check if the game is over (checkmate or stalemate)
+    pub fn is_game_over(&self) -> bool {
+        self.game_result != GameResult::InProgress
+    }
+    
+    /// Update the game result based on the current position.
+    /// This should be called after making a move to check for checkmate/stalemate.
+    pub fn update_game_result(&mut self) {
+        if self.game_result != GameResult::InProgress {
+            // Game already over, don't update
+            return;
+        }
+        
+        if self.is_checkmate() {
+            // The current active player is in checkmate
+            // So the opponent (who just moved) wins
+            let winner = !self.active_color;
+            self.game_result = GameResult::Checkmate(winner);
+        } else if self.is_stalemate() {
+            self.game_result = GameResult::Stalemate;
+        }
+    }
+    
     pub fn generate_pseudo_legal_moves(&self) -> MoveList {
         let mut moves = MoveList::new(); // MoveList is likely Vec<Move>
         let player_color = self.active_color;
