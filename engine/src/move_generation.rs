@@ -1,4 +1,5 @@
-use crate::board::Board; // Assuming Board struct is in board.rs
+use crate::{File, PROMOTION_PIECES, PreviousBoardState, Rank};
+use crate::board::Board; 
 use crate::color::Color;
 use crate::pieces::{Piece as PieceKindEnum, ColoredPiece};
 use crate::genmove::{Move, MoveList, Square};
@@ -177,5 +178,292 @@ impl Board {
             (1, 1), (1, -1), (-1, 1), (-1, -1),
         ];
         self.is_sliding_piece_attacking(queen_sq, target_sq, &QUEEN_DIRECTIONS) 
+    }
+    pub(crate) fn generate_knight_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList) {
+        const KNIGHT_OFFSETS: [(i8, i8); 8] = [
+            (1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1),
+        ];
+        let (from_rank_enum, from_file_enum) = square_to_rank_file_enums(from_sq);
+        let from_rank_val = from_rank_enum.to_index() as i8;
+        let from_file_val = from_file_enum.to_index() as i8;
+
+        for (dr, df) in KNIGHT_OFFSETS.iter() {
+            let target_rank_val = from_rank_val + dr;
+            let target_file_val = from_file_val + df;
+
+            if target_rank_val >= 0 && target_rank_val <= 7 &&
+               target_file_val >= 0 && target_file_val <= 7 {
+                let target_sq: Square = (target_rank_val as u8 * 8 + target_file_val as u8) as Square;
+                let (target_arr_r, target_arr_f) = square_to_array_indices(target_sq);
+                match self.squares[target_arr_r][target_arr_f] {
+                    Some(piece_on_target_sq) => {
+                        if piece_on_target_sq.color != piece_color {
+                            moves.push(Move::new_quiet(from_sq, target_sq));
+                        }
+                    }
+                    None => {
+                        moves.push(Move::new_quiet(from_sq, target_sq));
+                    }
+                }
+            }
+        }
+    }
+    pub(crate) fn generate_pawn_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList) {
+        let (from_rank_enum, from_file_enum) = square_to_rank_file_enums(from_sq);
+        let from_rank_val = from_rank_enum.to_index() as i8;
+        let from_file_val = from_file_enum.to_index() as i8;
+
+        let forward_delta_rank: i8;
+        let start_rank_val: i8;
+        let promotion_rank_val: i8;
+
+        if piece_color == Color::White {
+            forward_delta_rank = 1;
+            start_rank_val = Rank::Second.to_index() as i8;
+            promotion_rank_val = Rank::Eighth.to_index() as i8;
+        } else { // Black
+            forward_delta_rank = -1;
+            start_rank_val = Rank::Seventh.to_index() as i8;
+            promotion_rank_val = Rank::First.to_index() as i8;
+        }
+
+        let add_move_with_promotion_check = |current_from_sq: Square, target_rank_val: i8, target_file_val: i8, moves_list: &mut MoveList| {
+            // Check boundary before creating target_sq to avoid panic with invalid rank/file values
+            if target_rank_val >=0 && target_rank_val <= 7 && target_file_val >=0 && target_file_val <=7 {
+                let target_sq = (target_rank_val as u8 * 8 + target_file_val as u8) as Square;
+                if target_rank_val == promotion_rank_val {
+                    for &promo_piece_kind in PROMOTION_PIECES.iter() {
+                        moves_list.push(Move::new_promotion(current_from_sq, target_sq, promo_piece_kind));
+                    }
+                } else {
+                    moves_list.push(Move::new_quiet(current_from_sq, target_sq));
+                }
+            }
+        };
+        
+        // Single Square Push
+        let one_step_fwd_rank_val = from_rank_val + forward_delta_rank;
+        if one_step_fwd_rank_val >= 0 && one_step_fwd_rank_val <= 7 { // Check rank boundary
+            let target_sq_one_step: Square = (one_step_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
+            let (target_arr_r, target_arr_f) = square_to_array_indices(target_sq_one_step);
+            if self.squares[target_arr_r][target_arr_f].is_none() {
+                add_move_with_promotion_check(from_sq, one_step_fwd_rank_val, from_file_val, moves);
+                // Double Square Push
+                if from_rank_val == start_rank_val {
+                    let two_steps_fwd_rank_val = from_rank_val + (2 * forward_delta_rank);
+                    // No need to check boundary for two_steps_fwd_rank_val if one_step was valid from start rank
+                    let target_sq_two_steps: Square = (two_steps_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
+                    let (target_arr_r_two, target_arr_f_two) = square_to_array_indices(target_sq_two_steps);
+                    if self.squares[target_arr_r_two][target_arr_f_two].is_none() {
+                        moves.push(Move::new_quiet(from_sq, target_sq_two_steps));
+                    }
+                }
+            }
+        }
+
+        //Diagonal Captures
+        for df_capture in [-1i8, 1i8].iter() {
+            let target_capture_rank_val = from_rank_val + forward_delta_rank;
+            let target_capture_file_val = from_file_val + *df_capture;
+
+            if target_capture_rank_val >= 0 && target_capture_rank_val <= 7 &&
+               target_capture_file_val >= 0 && target_capture_file_val <= 7 {
+                let target_capture_sq: Square = (target_capture_rank_val as u8 * 8 + target_capture_file_val as u8) as Square;
+                let (target_arr_r, target_arr_f) = square_to_array_indices(target_capture_sq);
+
+                if let Some(piece_on_target) = self.squares[target_arr_r][target_arr_f] {
+                    if piece_on_target.color != piece_color {
+                        add_move_with_promotion_check(from_sq, target_capture_rank_val, target_capture_file_val, moves);
+                    }
+                }
+            }
+        }
+        
+        //En Passant Capture
+        if let Some(ep_target_sq_indices) = self.en_passant_target { // ep_target_sq_indices is (array_rank_idx, array_file_idx)
+            let ep_target_sq = array_indices_to_square(ep_target_sq_indices.0, ep_target_sq_indices.1);
+            let (ep_rank_enum, ep_file_enum) = square_to_rank_file_enums(ep_target_sq);
+            let ep_rank_val = ep_rank_enum.to_index() as i8;
+
+            let can_ep_from_this_rank = if piece_color == Color::White {
+                from_rank_val == Rank::Fifth.to_index() as i8 
+            } else { // Black
+                from_rank_val == Rank::Fourth.to_index() as i8
+            };
+
+            if can_ep_from_this_rank {
+                for df_capture in [-1i8, 1i8].iter() {
+                    let potential_ep_capture_rank_val = from_rank_val + forward_delta_rank;
+                    let potential_ep_capture_file_val = from_file_val + *df_capture;
+
+                    if potential_ep_capture_rank_val == ep_rank_val && 
+                       potential_ep_capture_file_val == ep_file_enum.to_index() as i8 {
+                        moves.push(Move::new_quiet(from_sq, ep_target_sq)); // EP move target is the EP square
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    pub(crate) fn generate_bishop_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList) {
+        const BISHOP_DIRECTIONS: [(i8, i8); 4] = [(1, 1), (1, -1), (-1, 1), (-1, -1)];
+        self.generate_sliding_piece_moves(from_sq, piece_color, moves, &BISHOP_DIRECTIONS);
+    }
+
+    pub(crate) fn generate_rook_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList) {
+        const ROOK_DIRECTIONS: [(i8, i8); 4] = [(0, 1), (0, -1), (1, 0), (-1, 0)];
+        self.generate_sliding_piece_moves(from_sq, piece_color, moves, &ROOK_DIRECTIONS);
+    }
+
+    pub(crate) fn generate_queen_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList) {
+        const QUEEN_DIRECTIONS: [(i8, i8); 8] = [
+            (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1),
+        ];
+        self.generate_sliding_piece_moves(from_sq, piece_color, moves, &QUEEN_DIRECTIONS);
+    }
+    
+    /// Helper for sliding pieces (Rook, Bishop, Queen)
+    fn generate_sliding_piece_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList, directions: &[(i8,i8)]) {
+        let (from_rank_enum, from_file_enum) = square_to_rank_file_enums(from_sq);
+        let initial_rank_val = from_rank_enum.to_index() as i8;
+        let initial_file_val = from_file_enum.to_index() as i8;
+
+        for (dr, df) in directions.iter() {
+            let mut current_rank_val = initial_rank_val;
+            let mut current_file_val = initial_file_val;
+
+            loop {
+                current_rank_val += *dr;
+                current_file_val += *df;
+
+                if current_rank_val >= 0 && current_rank_val <= 7 &&
+                   current_file_val >= 0 && current_file_val <= 7 {
+                    
+                    let target_sq: Square = (current_rank_val as u8 * 8 + current_file_val as u8) as Square;
+                    let (target_arr_r, target_arr_f) = square_to_array_indices(target_sq);
+
+                    match self.squares[target_arr_r][target_arr_f] {
+                        None => {
+                            moves.push(Move::new_quiet(from_sq, target_sq));
+                        }
+                        Some(piece_on_target_sq) => {
+                            if piece_on_target_sq.color != piece_color {
+                                moves.push(Move::new_quiet(from_sq, target_sq));
+                            }
+                            break; 
+                        }
+                    }
+                } else {
+                    break; 
+                }
+            }
+        }
+    }
+
+    pub(crate) fn generate_king_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList) {
+        const KING_DIRECTIONS: [(i8, i8); 8] = [
+            (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1),
+        ];
+        let (from_rank_enum, from_file_enum) = square_to_rank_file_enums(from_sq);
+        let initial_rank_val = from_rank_enum.to_index() as i8;
+        let initial_file_val = from_file_enum.to_index() as i8;
+
+        for (dr, df) in KING_DIRECTIONS.iter() {
+            let target_rank_val = initial_rank_val + dr;
+            let target_file_val = initial_file_val + df;
+
+            if target_rank_val >= 0 && target_rank_val <= 7 &&
+               target_file_val >= 0 && target_file_val <= 7 {
+                let target_sq: Square = (target_rank_val as u8 * 8 + target_file_val as u8) as Square;
+                let (target_arr_r, target_arr_f) = square_to_array_indices(target_sq);
+                match self.squares[target_arr_r][target_arr_f] {
+                    None => { moves.push(Move::new_quiet(from_sq, target_sq)); }
+                    Some(piece_on_target_sq) => {
+                        if piece_on_target_sq.color != piece_color {
+                            moves.push(Move::new_quiet(from_sq, target_sq));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    pub fn unmake_move(&mut self, mv: &Move, prev_state: &PreviousBoardState) {
+        let (from_arr_r, from_arr_f) = square_to_array_indices(mv.from);
+        let (to_arr_r, to_arr_f) = square_to_array_indices(mv.to);
+
+        // 1. Restore Active Color (to the player who made the move)
+        self.active_color = !self.active_color; 
+
+        // 2. Restore Fullmove Number (if black's move was just unmade)
+        if self.active_color == Color::Black { // Now it's Black's turn again, meaning Black's move was unmade
+            self.fullmove_number -= 1;
+        }
+        
+        // 3. Restore Castling Rights
+        self.castling_kingside_white = prev_state.castling_kingside_white;
+        self.castling_queenside_white = prev_state.castling_queenside_white;
+        self.castling_kingside_black = prev_state.castling_kingside_black;
+        self.castling_queenside_black = prev_state.castling_queenside_black;
+
+        // 4. Restore En Passant Target
+        self.en_passant_target = prev_state.previous_en_passant_target;
+        
+        // 5. Restore Halfmove Clock
+        self.halfmove_clock = prev_state.previous_halfmove_clock;
+
+        // 6. Undo Piece Movement
+        // 6a. Get the piece that moved (it's currently on mv.to)
+        let piece_that_moved = self.squares[to_arr_r][to_arr_f]
+            .expect("unmake_move: No piece at 'to' square, should have been moved by make_move.");
+
+        // 6b. Handle Pawn Demotion (if it was a promotion)
+        if mv.promotion.is_some() {
+            // Change the piece back to a pawn of its color
+            self.squares[from_arr_r][from_arr_f] = Some(ColoredPiece {
+                kind: PieceKindEnum::Pawn,
+                color: piece_that_moved.color, // Color of the promoted piece is the pawn's color
+            });
+        } else {
+            // Move the piece back to its original square
+            self.squares[from_arr_r][from_arr_f] = Some(piece_that_moved);
+        }
+        self.squares[to_arr_r][to_arr_f] = prev_state.captured_piece;
+
+        if piece_that_moved.kind == PieceKindEnum::Pawn &&
+           (from_arr_f != to_arr_f) && // Diagonal pawn move
+           prev_state.captured_piece.is_none() && // Landed on an empty square
+           prev_state.previous_en_passant_target.map_or(false, |ep_indices| 
+               mv.to == array_indices_to_square(ep_indices.0, ep_indices.1)
+           )
+        {
+            let captured_pawn_arr_r = if piece_that_moved.color == Color::White {
+                to_arr_r + 1 // White captured a black pawn on rank below mv.to (array index perspective)
+            } else {
+                to_arr_r - 1 // Black captured a white pawn on rank above mv.to
+            };
+            // The captured pawn's color is the opponent's color
+            let opponent_color = !piece_that_moved.color;
+            self.squares[captured_pawn_arr_r][to_arr_f] = Some(ColoredPiece {
+                kind: PieceKindEnum::Pawn,
+                color: opponent_color,
+            });
+        }
+
+        // 7b. Undo Castling (Move the Rook back)
+        if piece_that_moved.kind == PieceKindEnum::King &&
+           (to_arr_f as i8 - from_arr_f as i8).abs() == 2 { // King moved two squares
+            
+            let (rook_original_f_idx, rook_current_f_idx) = if to_arr_f > from_arr_f { // Kingside castle (king went E->G, rook F->H)
+                (File::H.to_index(), File::F.to_index())
+            } else { // Queenside castle (king went E->C, rook D->A)
+                (File::A.to_index(), File::D.to_index())
+            };
+            // from_arr_r is king's original rank
+            if let Some(rook_piece) = self.squares[from_arr_r][rook_current_f_idx].take() {
+                self.squares[from_arr_r][rook_original_f_idx] = Some(rook_piece);
+            } else {
+                panic!("Unmake castling error: Rook not found at expected castled position!");
+            }
+        }
     }
 }
