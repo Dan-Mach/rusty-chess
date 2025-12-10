@@ -326,6 +326,7 @@ impl Board {
         // Checkmate requires:
         // 1. The current player is in check
         // 2. The current player has no legal moves
+
         self.is_in_check() && self.generate_legal_moves().is_empty()
     }
     
@@ -398,6 +399,7 @@ impl Board {
         }
         moves
     }
+    
     
     pub fn to_fen_string(&self) -> String {
         let mut fen_parts: Vec<String> = Vec::with_capacity(6);
