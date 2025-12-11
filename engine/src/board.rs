@@ -290,15 +290,11 @@ impl Board {
         let current_player_color = self.active_color;     
         let opponent_color = !current_player_color; 
 
-        for mv in pseudo_legal_moves.iter() { // Iterate by reference as Move is Copy
-            //Simulate the move on a temporary board
-            let mut temp_board = self.clone(); // Requires Board to derive Clone
-            temp_board.make_move(mv); // Use the full make_move method
+        for mv in pseudo_legal_moves.iter() { 
+            let mut temp_board = self.clone(); 
+            temp_board.make_move(mv); 
 
-            // Find the current player's king on this temporary board
-            //    (It's the king of the player who just made the move `mv`)
             if let Some(king_sq_after_move) = temp_board.find_king_square(current_player_color) {
-                // 3. Check if that king is attacked by the opponent on the temporary board
                 if !temp_board.is_square_attacked(king_sq_after_move, opponent_color) {
                     legal_moves.push(*mv); 
                 }
@@ -308,8 +304,7 @@ impl Board {
         }
         legal_moves
     }
-    
-    /// Check if the current player is in check
+
     pub fn is_in_check(&self) -> bool {
         let current_player_color = self.active_color;
         let opponent_color = !current_player_color;
@@ -320,21 +315,14 @@ impl Board {
             false
         }
     }
-    
-    /// Check if the current position is checkmate
-    pub fn is_checkmate(&self) -> bool {
-        // Checkmate requires:
-        // 1. The current player is in check
-        // 2. The current player has no legal moves
 
+    pub fn is_checkmate(&self) -> bool {
         self.is_in_check() && self.generate_legal_moves().is_empty()
     }
     
     /// Check if the current position is stalemate
     pub fn is_stalemate(&self) -> bool {
-        // Stalemate requires:
-        // 1. The current player is NOT in check
-        // 2. The current player has no legal moves
+
         !self.is_in_check() && self.generate_legal_moves().is_empty()
     }
     
@@ -342,31 +330,22 @@ impl Board {
     pub fn is_game_over(&self) -> bool {
         self.game_result != GameResult::InProgress
     }
-    
-    /// Update the game result based on the current position.
-    /// This should be called after making a move to check for checkmate/stalemate.
-    /// 
-    /// Note: This method is separate from `make_move()` to avoid infinite recursion,
-    /// since `generate_legal_moves()` internally calls `make_move()` on temporary boards.
+
     pub fn update_game_result(&mut self) {
         if self.game_result != GameResult::InProgress {
             // Game already over, don't update
             return;
         }
-        
-        // Generate legal moves once to avoid redundant computation
+   
         let legal_moves = self.generate_legal_moves();
         let has_legal_moves = !legal_moves.is_empty();
         
         if !has_legal_moves {
             // No legal moves - either checkmate or stalemate
             if self.is_in_check() {
-                // The current active player is in checkmate
-                // So the opponent (who just moved) wins
                 let winner = !self.active_color;
                 self.game_result = GameResult::Checkmate(winner);
             } else {
-                // Not in check but no legal moves - stalemate
                 self.game_result = GameResult::Stalemate;
             }
         }
@@ -400,7 +379,7 @@ impl Board {
         moves
     }
     
-    
+
     pub fn to_fen_string(&self) -> String {
         let mut fen_parts: Vec<String> = Vec::with_capacity(6);
 
