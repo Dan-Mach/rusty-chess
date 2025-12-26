@@ -23,8 +23,9 @@ fn test_en_passant_white_pawn_double_push() {
     board.make_move(&e4_move);
     
     // En passant target should now be set to e3
-    // e3 = square 20 (rank 2 * 8 + file 4)
-    let expected_ep_target = Some((5, 4)); // Array indices for e3
+    // e3 = square 20 (rank 2, file 4: 2*8+4=20)
+    // Array indices: rank_val=2, array_rank_idx=7-2=5, file_val=4
+    let expected_ep_target = Some((5, 4)); // Array indices (array_rank, array_file) for e3
     
     assert_eq!(
         board.en_passant_target, 
@@ -48,7 +49,9 @@ fn test_en_passant_black_pawn_double_push() {
     board.make_move(&d5_move);
     
     // En passant target should now be set to d6
-    let expected_ep_target = Some((2, 3)); // Array indices for d6
+    // d6 = square 43 (rank 5, file 3: 5*8+3=43)
+    // Array indices: rank_val=5, array_rank_idx=7-5=2, file_val=3
+    let expected_ep_target = Some((2, 3)); // Array indices (array_rank, array_file) for d6
     
     assert_eq!(
         board.en_passant_target,

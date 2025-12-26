@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This report documents logic errors discovered in the rusty-chess repository. A total of **3 critical logic errors** were identified that could cause incorrect chess game behavior.
+This report documents logic errors discovered in the rusty-chess repository. A total of **2 critical logic errors** and **1 medium-severity issue** were identified that could cause incorrect chess game behavior.
 
 ---
 
