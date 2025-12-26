@@ -13,7 +13,6 @@ fn sq(s: &str) -> u8 {
 }
 
 #[test]
-#[should_panic] // This test SHOULD fail due to the en passant bug
 fn test_en_passant_white_pawn_double_push() {
     // Test that en passant target is correctly set after white pawn double-push
     let mut board = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -36,7 +35,6 @@ fn test_en_passant_white_pawn_double_push() {
 }
 
 #[test]
-#[should_panic] // This test SHOULD fail due to the en passant bug
 fn test_en_passant_black_pawn_double_push() {
     // Test that en passant target is correctly set after black pawn double-push
     let mut board = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -61,7 +59,6 @@ fn test_en_passant_black_pawn_double_push() {
 }
 
 #[test]
-#[should_panic] // This test SHOULD fail due to the Move::new() bug
 fn test_move_new_with_promotion_parameter() {
     // Test that Move::new() respects the promotion parameter
     let promotion_move = Move::new(sq("a7"), sq("a8"), Some(Piece::Queen));
