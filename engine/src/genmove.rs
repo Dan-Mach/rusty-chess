@@ -10,8 +10,8 @@ pub struct Move {
 }
 
 impl Move {
-    pub fn new(from: Square, to: Square, promotion:Option<Piece>) -> Self {
-        Move { from, to, promotion: None }
+    pub fn new(from: Square, to: Square, promotion: Option<Piece>) -> Self {
+        Move { from, to, promotion }
     }
 
     pub fn new_quiet(from: Square, to: Square) -> Self {
