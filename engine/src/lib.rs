@@ -28,4 +28,5 @@ pub use crate::search::*;
 mod tests {
     mod move_gen_test;
     mod checkmate_test;
+    mod logic_error_tests;
 }

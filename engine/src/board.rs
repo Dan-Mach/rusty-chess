@@ -207,8 +207,8 @@ impl Board {
         }
 
         let (from_r_enum, from_f_enum) = square_to_rank_file_enums(mv.from);
-        let (to_r_enum, to_f_enum) = square_to_rank_file_enums(mv.to);
-        if (to_r_enum.to_index() as i8 - from_f_enum.to_index() as i8).abs() == 2 {
+        let (to_r_enum, _to_f_enum) = square_to_rank_file_enums(mv.to);
+        if (to_r_enum.to_index() as i8 - from_r_enum.to_index() as i8).abs() == 2 {
             let ep_rank_val = if piece_moved.color == Color::White { from_r_enum.to_index() + 1 } else { from_r_enum.to_index() - 1 };
             let ep_square_idx = (ep_rank_val as u8 * 8 + from_f_enum.to_index() as u8) as Square;
              self.en_passant_target = Some(square_to_array_indices(ep_square_idx));
