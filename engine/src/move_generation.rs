@@ -126,8 +126,7 @@ impl Board {
                 }
                 let (arr_r, arr_f) = square_to_array_indices(current_iter_sq);
                 if self.squares[arr_r][arr_f].is_some() {
-                    break; // Path is blocked by another piece (friendly or enemy)
-                           // so target_sq (if further) is not attacked along this ray.
+                    break; 
                 }
             }
         }
