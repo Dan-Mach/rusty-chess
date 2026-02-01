@@ -11,7 +11,7 @@ pub const NUM_COLORS: usize = 2;
 pub const ALL_COLOR: [Color;NUM_COLORS] = [Color::White, Color::Black];
 
 impl Color {
-    //white side
+    
     #[inline]
     pub fn to_index(&self) -> usize {
         *self as usize
@@ -36,7 +36,7 @@ impl Color {
         }
         
     }
-    //black side
+
     #[inline]
     pub fn to_their_backrank(&self) -> Rank {
         match *self {
@@ -44,7 +44,7 @@ impl Color {
             Color::Black => Rank::First,
         }
     }
-    /// Convert a `Color` to my second rank, which represents the starting rank for my pawns.
+
     #[inline]
     pub fn to_second_rank(&self) -> Rank {
         match *self {
@@ -52,8 +52,7 @@ impl Color {
             Color::Black => Rank::Seventh,
         }
     }
-    /// Convert a `Color` to my fourth rank, which represents the rank of my pawns when
-    /// moving two squares forward.
+
     #[inline]
     pub fn to_fourth_rank(&self) -> Rank {
         match *self {
@@ -62,7 +61,6 @@ impl Color {
         }
     }
 
-    /// Convert a `Color` to my seventh rank, which represents the rank before pawn promotion.
     #[inline]
     pub fn to_seventh_rank(&self) -> Rank {
         match *self {
@@ -75,7 +73,6 @@ impl Color {
 impl Not for Color {
     type Output = Color;
 
-    /// Get the other color.
     #[inline]
     fn not(self) -> Color {
         if self == Color::White {

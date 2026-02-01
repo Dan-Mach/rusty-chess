@@ -1,51 +1,50 @@
-use failure::Fail;
+use thiserror::Error;
 
-#[derive(Clone, Debug, Fail, PartialEq, Eq)]
+#[derive(Clone, Debug, Error, PartialEq, Eq)]
 pub enum FenParseError {
-    #[fail(display = "Invalid FEN format structure: {}", _0)]
+    #[error("Invalid FEN format structure: {0}")]
     InvalidFormat(String),
-    #[fail(display = "Invalid piece character in FEN: '{}'", _0)]
+    #[error("Invalid piece character in FEN: '{0}'")]
     InvalidPiece(char),
-    #[fail(display = "Invalid FEN rank (files do not sum to 8): '{}'", _0)]
+    #[error("Invalid FEN rank (files do not sum to 8): '{0}'")]
     InvalidRankLength(String),
-    #[fail(display = "Too many parts in FEN string")]
+    #[error("Too many parts in FEN string")]
     TooManyParts,
-    #[fail(display = "Not enough parts in FEN string (expected 6)")]
+    #[error("Not enough parts in FEN string (expected 6)")]
     NotEnoughParts,
-    #[fail(display = "Invalid active color in FEN: {}", _0)]
+    #[error("Invalid active color in FEN: {0}")]
     InvalidActiveColor(String),
-    #[fail(display = "Invalid castling rights in FEN: {}", _0)]
+    #[error("Invalid castling rights in FEN: {0}")]
     InvalidCastlingRights(String),
-    #[fail(display = "Invalid en passant target square in FEN: {}", _0)]
+    #[error("Invalid en passant target square in FEN: {0}")]
     InvalidEnPassantTarget(String),
-    #[fail(display = "Invalid halfmove clock in FEN: {}", _0)]
+    #[error("Invalid halfmove clock in FEN: {0}")]
     InvalidHalfmoveClock(String),
-    #[fail(display = "Invalid fullmove number in FEN: {}", _0)]
+    #[error("Invalid fullmove number in FEN: {0}")]
     InvalidFullmoveNumber(String),
 }
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, Error)]
 pub enum Error {
-    #[fail(display = "Invalid FEN string provided: {}", fen_string)] // General FEN issue
+    #[error("Invalid FEN string provided: {}", fen_string)] // General FEN issue
     InvalidFenGeneral { fen_string: String },
 
-    #[fail(display = "FEN parsing failed")] // Wraps the specific FenParseError
-    FenParsing(#[cause] FenParseError),
-
-    #[fail(display = "The board specified did not pass sanity checks. Are you sure the kings exist and the side to move cannot capture the opposing king?")]
+    #[error("FEN parsing failed")] // Wraps the specific FenParseError
+    FenParsing(#[source] FenParseError),        
+    #[error("The board specified did not pass sanity checks. Are you sure the kings exist and the side to move cannot capture the opposing king?")]
     InvalidBoard,
 
-    #[fail(display = "The string specified does not contain a valid algebraic notation square")]
+    #[error("The string specified does not contain a valid algebraic notation square")]
     InvalidSquare,
 
-    #[fail(display = "The string specified does not contain a valid SAN notation move")]
+    #[error("The string specified does not contain a valid SAN notation move")]
     InvalidSanMove,
 
-    #[fail(display = "An attempt was made to create a move from an invalid UCI string")] // Corrected typo "atempt"
+    #[error("An attempt was made to create a move from an invalid UCI string")] // Corrected typo "atempt"
     InvalidUciMove,
 
-    #[fail(display = "The string specified does not contain a valid rank")]
+    #[error("The string specified does not contain a valid rank")]
     InvalidRank,
 
-    #[fail(display = "The string specified does not contain a valid file")]
+    #[error("The string specified does not contain a valid file")]
     InvalidFile,
 }
