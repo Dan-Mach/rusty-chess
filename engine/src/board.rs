@@ -217,11 +217,12 @@ impl Board {
         if prev_state.captured_piece.is_none() && (from_arr_f != to_arr_f) {
             if let Some(ep_indices_to_check) = prev_state.previous_en_passant_target {
                 let ep_sq_to_check = array_indices_to_square(ep_indices_to_check.0, ep_indices_to_check.1);
-                if mv.to == ep_sq_to_check { // Pawn landed on the previous EP target square
+                if mv.to == ep_sq_to_check {
                     let captured_pawn_arr_r = if piece_moved.color == Color::White { to_arr_r + 1 } else { to_arr_r - 1 };
-                    actual_captured_piece_for_ep_logic = self.squares[captured_pawn_arr_r][to_arr_f].take(); 
+                    if captured_pawn_arr_r < 8 {
+                        actual_captured_piece_for_ep_logic = self.squares[captured_pawn_arr_r][to_arr_f].take(); 
+                    }
                 }
-                
             }
         }
        // Re-check halfmove clock if EP capture changed the capture status
@@ -230,6 +231,7 @@ impl Board {
         }
 
         // Handle Castling 
+        //there is an error here
         if piece_moved.kind == PieceKindEnum::King && (to_arr_f as i8 - from_arr_f as i8).abs() == 2 {
             let (rook_from_f_idx, rook_to_f_idx) = if to_arr_f > from_arr_f { (File::H.to_index(), File::F.to_index()) } else { (File::A.to_index(), File::D.to_index()) };
             if let Some(rook_piece) = self.squares[from_arr_r][rook_from_f_idx].take() {
