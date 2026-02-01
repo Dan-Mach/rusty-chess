@@ -109,14 +109,13 @@ impl Board {
             let mut current_rank_val = initial_rank_val;
             let mut current_file_val = initial_file_val;
 
-            loop { // Loop along one direction (ray)
+            loop { 
                 current_rank_val += *dr;
                 current_file_val += *df;
 
-                // Boundary check
                 if !(current_rank_val >= 0 && current_rank_val <= 7 &&
                      current_file_val >= 0 && current_file_val <= 7) {
-                    break; // Off board, stop this direction
+                    break; 
                 }
 
                 let current_iter_sq: Square = (current_rank_val as u8 * 8 + current_file_val as u8) as Square;
@@ -227,7 +226,6 @@ impl Board {
         }
 
         let add_move_with_promotion_check = |current_from_sq: Square, target_rank_val: i8, target_file_val: i8, moves_list: &mut MoveList| {
-            // Check boundary before creating target_sq to avoid panic with invalid rank/file values
             if target_rank_val >=0 && target_rank_val <= 7 && target_file_val >=0 && target_file_val <=7 {
                 let target_sq = (target_rank_val as u8 * 8 + target_file_val as u8) as Square;
                 if target_rank_val == promotion_rank_val {
@@ -240,17 +238,17 @@ impl Board {
             }
         };
         
-        // Single Square Push
+
         let one_step_fwd_rank_val = from_rank_val + forward_delta_rank;
-        if one_step_fwd_rank_val >= 0 && one_step_fwd_rank_val <= 7 { // Check rank boundary
+        if one_step_fwd_rank_val >= 0 && one_step_fwd_rank_val <= 7 { 
             let target_sq_one_step: Square = (one_step_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
             let (target_arr_r, target_arr_f) = square_to_array_indices(target_sq_one_step);
             if self.squares[target_arr_r][target_arr_f].is_none() {
                 add_move_with_promotion_check(from_sq, one_step_fwd_rank_val, from_file_val, moves);
-                // Double Square Push
+      
                 if from_rank_val == start_rank_val {
                     let two_steps_fwd_rank_val = from_rank_val + (2 * forward_delta_rank);
-                    // No need to check boundary for two_steps_fwd_rank_val if one_step was valid from start rank
+
                     let target_sq_two_steps: Square = (two_steps_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
                     let (target_arr_r_two, target_arr_f_two) = square_to_array_indices(target_sq_two_steps);
                     if self.squares[target_arr_r_two][target_arr_f_two].is_none() {
@@ -260,7 +258,6 @@ impl Board {
             }
         }
 
-        //Diagonal Captures
         for df_capture in [-1i8, 1i8].iter() {
             let target_capture_rank_val = from_rank_val + forward_delta_rank;
             let target_capture_file_val = from_file_val + *df_capture;
@@ -277,8 +274,7 @@ impl Board {
                 }
             }
         }
-        
-        //En Passant Capture
+
         if let Some(ep_target_sq_indices) = self.en_passant_target { // ep_target_sq_indices is (array_rank_idx, array_file_idx)
             let ep_target_sq = array_indices_to_square(ep_target_sq_indices.0, ep_target_sq_indices.1);
             let (ep_rank_enum, ep_file_enum) = square_to_rank_file_enums(ep_target_sq);
@@ -320,8 +316,7 @@ impl Board {
         ];
         self.generate_sliding_piece_moves(from_sq, piece_color, moves, &QUEEN_DIRECTIONS);
     }
-    
-    /// Helper for sliding pieces (Rook, Bishop, Queen)
+
     fn generate_sliding_piece_moves(&self, from_sq: Square, piece_color: Color, moves: &mut MoveList, directions: &[(i8,i8)]) {
         let (from_rank_enum, from_file_enum) = square_to_rank_file_enums(from_sq);
         let initial_rank_val = from_rank_enum.to_index() as i8;
@@ -390,32 +385,22 @@ impl Board {
         let (from_arr_r, from_arr_f) = square_to_array_indices(mv.from);
         let (to_arr_r, to_arr_f) = square_to_array_indices(mv.to);
 
-        // 1. Restore Active Color (to the player who made the move)
         self.active_color = !self.active_color; 
 
-        // 2. Restore Fullmove Number (if black's move was just unmade)
-        if self.active_color == Color::Black { // Now it's Black's turn again, meaning Black's move was unmade
-            self.fullmove_number -= 1;
-        }
-        
-        // 3. Restore Castling Rights
-        self.castling_kingside_white = prev_state.castling_kingside_white;
+        if self.active_color == Color::Black { 
         self.castling_queenside_white = prev_state.castling_queenside_white;
         self.castling_kingside_black = prev_state.castling_kingside_black;
         self.castling_queenside_black = prev_state.castling_queenside_black;
 
-        // 4. Restore En Passant Target
         self.en_passant_target = prev_state.previous_en_passant_target;
-        
-        // 5. Restore Halfmove Clock
+
         self.halfmove_clock = prev_state.previous_halfmove_clock;
 
-        // 6. Undo Piece Movement
-        // 6a. Get the piece that moved (it's currently on mv.to)
+
         let piece_that_moved = self.squares[to_arr_r][to_arr_f]
             .expect("unmake_move: No piece at 'to' square, should have been moved by make_move.");
 
-        // 6b. Handle Pawn Demotion (if it was a promotion)
+
         if mv.promotion.is_some() {
             // Change the piece back to a pawn of its color
             self.squares[from_arr_r][from_arr_f] = Some(ColoredPiece {
@@ -423,24 +408,24 @@ impl Board {
                 color: piece_that_moved.color, // Color of the promoted piece is the pawn's color
             });
         } else {
-            // Move the piece back to its original square
+
             self.squares[from_arr_r][from_arr_f] = Some(piece_that_moved);
         }
         self.squares[to_arr_r][to_arr_f] = prev_state.captured_piece;
 
         if piece_that_moved.kind == PieceKindEnum::Pawn &&
-           (from_arr_f != to_arr_f) && // Diagonal pawn move
-           prev_state.captured_piece.is_none() && // Landed on an empty square
+           (from_arr_f != to_arr_f) && 
+           prev_state.captured_piece.is_none() && 
            prev_state.previous_en_passant_target.map_or(false, |ep_indices| 
                mv.to == array_indices_to_square(ep_indices.0, ep_indices.1)
            )
         {
             let captured_pawn_arr_r = if piece_that_moved.color == Color::White {
-                to_arr_r + 1 // White captured a black pawn on rank below mv.to (array index perspective)
+                to_arr_r + 1 
             } else {
-                to_arr_r - 1 // Black captured a white pawn on rank above mv.to
+                to_arr_r - 1
             };
-            // The captured pawn's color is the opponent's color
+
             let opponent_color = !piece_that_moved.color;
             self.squares[captured_pawn_arr_r][to_arr_f] = Some(ColoredPiece {
                 kind: PieceKindEnum::Pawn,
@@ -448,20 +433,19 @@ impl Board {
             });
         }
 
-        // 7b. Undo Castling (Move the Rook back)
         if piece_that_moved.kind == PieceKindEnum::King &&
-           (to_arr_f as i8 - from_arr_f as i8).abs() == 2 { // King moved two squares
+           (to_arr_f as i8 - from_arr_f as i8).abs() == 2 { 
             
-            let (rook_original_f_idx, rook_current_f_idx) = if to_arr_f > from_arr_f { // Kingside castle (king went E->G, rook F->H)
+            let (rook_original_f_idx, rook_current_f_idx) = if to_arr_f > from_arr_f {
                 (File::H.to_index(), File::F.to_index())
-            } else { // Queenside castle (king went E->C, rook D->A)
+            } else { 
                 (File::A.to_index(), File::D.to_index())
             };
-            // from_arr_r is king's original rank
             if let Some(rook_piece) = self.squares[from_arr_r][rook_current_f_idx].take() {
                 self.squares[from_arr_r][rook_original_f_idx] = Some(rook_piece);
             } else {
                 panic!("Unmake castling error: Rook not found at expected castled position!");
+            }
             }
         }
     }
