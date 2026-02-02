@@ -214,13 +214,13 @@ impl Board {
         let forward_delta_rank: i8;
         let start_rank_val: i8;
         let promotion_rank_val: i8;
-
-        if piece_color == Color::White {
+        
+       if piece_color == Color::White {
+        forward_delta_rank = -1; 
+        start_rank_val = Rank::Second.to_index() as i8;
+        promotion_rank_val = Rank::Eighth.to_index() as i8;
+        } else {
             forward_delta_rank = 1;
-            start_rank_val = Rank::Second.to_index() as i8;
-            promotion_rank_val = Rank::Eighth.to_index() as i8;
-        } else { // Black
-            forward_delta_rank = -1;
             start_rank_val = Rank::Seventh.to_index() as i8;
             promotion_rank_val = Rank::First.to_index() as i8;
         }
