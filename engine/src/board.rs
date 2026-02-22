@@ -208,13 +208,18 @@ impl Board {
 
         let (from_r_enum, from_f_enum) = square_to_rank_file_enums(mv.from);
         let (to_r_enum, _to_f_enum) = square_to_rank_file_enums(mv.to);
-        if (to_r_enum.to_index() as i8 - from_r_enum.to_index() as i8).abs() == 2 {
+        if piece_moved.kind == PieceKindEnum::Pawn
+            && (to_r_enum.to_index() as i8 - from_r_enum.to_index() as i8).abs() == 2
+        {
             let ep_rank_val = if piece_moved.color == Color::White { from_r_enum.to_index() + 1 } else { from_r_enum.to_index() - 1 };
             let ep_square_idx = (ep_rank_val as u8 * 8 + from_f_enum.to_index() as u8) as Square;
              self.en_passant_target = Some(square_to_array_indices(ep_square_idx));
         }
 
-        if prev_state.captured_piece.is_none() && (from_arr_f != to_arr_f) {
+        if piece_moved.kind == PieceKindEnum::Pawn
+            && prev_state.captured_piece.is_none()
+            && (from_arr_f != to_arr_f)
+        {
             if let Some(ep_indices_to_check) = prev_state.previous_en_passant_target {
                 let ep_sq_to_check = array_indices_to_square(ep_indices_to_check.0, ep_indices_to_check.1);
                 if mv.to == ep_sq_to_check {
@@ -231,7 +236,6 @@ impl Board {
         }
 
         // Handle Castling 
-        //there is an error here
         if piece_moved.kind == PieceKindEnum::King && (to_arr_f as i8 - from_arr_f as i8).abs() == 2 {
             let (rook_from_f_idx, rook_to_f_idx) = if to_arr_f > from_arr_f { (File::H.to_index(), File::F.to_index()) } else { (File::A.to_index(), File::D.to_index()) };
             if let Some(rook_piece) = self.squares[from_arr_r][rook_from_f_idx].take() {

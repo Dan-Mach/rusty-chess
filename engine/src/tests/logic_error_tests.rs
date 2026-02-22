@@ -62,6 +62,20 @@ fn test_en_passant_black_pawn_double_push() {
 }
 
 #[test]
+fn test_non_pawn_two_rank_move_does_not_set_en_passant_target() {
+    let mut board = Board::parse_fen("8/8/8/8/8/8/8/3QK3 w - - 0 1")
+        .expect("Failed to parse position");
+
+    board.make_move(&Move::new_quiet(sq("d1"), sq("d3")));
+
+    assert_eq!(
+        board.en_passant_target,
+        None,
+        "En passant target should only be set for pawn double-push moves"
+    );
+}
+
+#[test]
 fn test_move_new_with_promotion_parameter() {
     // Test that Move::new() respects the promotion parameter
     let promotion_move = Move::new(sq("a7"), sq("a8"), Some(Piece::Queen));
