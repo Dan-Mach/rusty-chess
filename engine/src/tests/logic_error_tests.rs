@@ -144,3 +144,37 @@ fn test_coordinate_conversion_consistency() {
         );
     }
 }
+
+#[test]
+fn test_en_passant_capture_move_generated_after_double_push() {
+    let mut board = Board::parse_fen("4k3/3p4/8/4P3/8/8/8/4K3 b - - 0 1")
+        .expect("Failed to parse position");
+
+    board.make_move(&Move::new_quiet(sq("d7"), sq("d5")));
+
+    let legal_moves = board.generate_legal_moves();
+    let ep_capture = legal_moves.iter().find(|m| m.from == sq("e5") && m.to == sq("d6"));
+
+    assert!(
+        ep_capture.is_some(),
+        "En passant capture e5xd6 should be generated. Legal moves: {:?}",
+        legal_moves
+    );
+}
+
+#[test]
+fn test_castling_moves_generated_when_rights_available() {
+    let board = Board::parse_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+        .expect("Failed to parse castling position");
+
+    let legal_moves = board.generate_legal_moves();
+
+    assert!(
+        legal_moves.iter().any(|m| m.from == sq("e1") && m.to == sq("g1")),
+        "White kingside castling (e1g1) should be generated"
+    );
+    assert!(
+        legal_moves.iter().any(|m| m.from == sq("e1") && m.to == sq("c1")),
+        "White queenside castling (e1c1) should be generated"
+    );
+}
