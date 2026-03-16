@@ -1,5 +1,3 @@
-
-
-//not yet implemented
+// move evaluation
 
 
