@@ -216,15 +216,15 @@ impl Board {
         let promotion_rank_val: i8;
         
        if piece_color == Color::White {
-        forward_delta_rank = -1; 
-        start_rank_val = Rank::Second.to_index() as i8;
-        promotion_rank_val = Rank::Eighth.to_index() as i8;
-        } else {
             forward_delta_rank = 1;
+            start_rank_val = Rank::Second.to_index() as i8;
+            promotion_rank_val = Rank::Eighth.to_index() as i8;
+        } 
+        else {
+            forward_delta_rank = -1;
             start_rank_val = Rank::Seventh.to_index() as i8;
             promotion_rank_val = Rank::First.to_index() as i8;
         }
-
         let add_move_with_promotion_check = |current_from_sq: Square, target_rank_val: i8, target_file_val: i8, moves_list: &mut MoveList| {
             if target_rank_val >=0 && target_rank_val <= 7 && target_file_val >=0 && target_file_val <=7 {
                 let target_sq = (target_rank_val as u8 * 8 + target_file_val as u8) as Square;
