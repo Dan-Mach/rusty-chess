@@ -380,6 +380,89 @@ impl Board {
                 }
             }
         }
+
+        let king_sq = from_sq;
+
+        if piece_color == Color::White {
+            // --- Kingside ---
+            if self.castling_kingside_white {
+                let f1 = rank_file_enums_to_square(Rank::First, File::F);
+                let g1 = rank_file_enums_to_square(Rank::First, File::G);
+
+                let (f1_r, f1_f) = square_to_array_indices(f1);
+                let (g1_r, g1_f) = square_to_array_indices(g1);
+
+                if self.squares[f1_r][f1_f].is_none() &&
+                self.squares[g1_r][g1_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::Black) &&
+                !self.is_square_attacked(f1, Color::Black) &&
+                !self.is_square_attacked(g1, Color::Black) {
+
+                    moves.push(Move::new_quiet(king_sq, g1));
+                }
+            }
+
+            // --- Queenside ---
+            if self.castling_queenside_white {
+                let d1 = rank_file_enums_to_square(Rank::First, File::D);
+                let c1 = rank_file_enums_to_square(Rank::First, File::C);
+                let b1 = rank_file_enums_to_square(Rank::First, File::B);
+
+                let (d1_r, d1_f) = square_to_array_indices(d1);
+                let (c1_r, c1_f) = square_to_array_indices(c1);
+                let (b1_r, b1_f) = square_to_array_indices(b1);
+
+                if self.squares[d1_r][d1_f].is_none() &&
+                self.squares[c1_r][c1_f].is_none() &&
+                self.squares[b1_r][b1_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::Black) &&
+                !self.is_square_attacked(d1, Color::Black) &&
+                !self.is_square_attacked(c1, Color::Black) {
+
+                    moves.push(Move::new_quiet(king_sq, c1));
+                }
+            }
+        }
+        if  piece_color == Color::Black {
+            // --- Kingside ---
+            if self.castling_kingside_black {
+                let f8 = rank_file_enums_to_square(Rank::Eighth, File::F);
+                let g8 = rank_file_enums_to_square(Rank::Eighth, File::G);
+
+                let (f8_r, f8_f) = square_to_array_indices(f8);
+                let (g8_r, g8_f) = square_to_array_indices(g8);
+
+                if self.squares[f8_r][f8_f].is_none() &&
+                self.squares[g8_r][g8_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::White) &&
+                !self.is_square_attacked(f8, Color::White) &&
+                !self.is_square_attacked(g8, Color::White) {
+
+                    moves.push(Move::new_quiet(king_sq, g8));
+                }
+            }
+
+            // --- Queenside ---
+            if self.castling_queenside_black {
+                let d8 = rank_file_enums_to_square(Rank::Eighth, File::D);
+                let c8 = rank_file_enums_to_square(Rank::Eighth, File::C);
+                let b8 = rank_file_enums_to_square(Rank::Eighth, File::B);
+
+                let (d8_r, d8_f) = square_to_array_indices(d8);
+                let (c8_r, c8_f) = square_to_array_indices(c8);
+                let (b8_r, b8_f) = square_to_array_indices(b8);
+
+                if self.squares[d8_r][d8_f].is_none() &&
+                self.squares[c8_r][c8_f].is_none() &&
+                self.squares[b8_r][b8_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::White) &&
+                !self.is_square_attacked(d8, Color::White) &&
+                !self.is_square_attacked(c8, Color::White) {
+
+                    moves.push(Move::new_quiet(king_sq, c8));
+                }
+            }
+        }
     }
     pub fn unmake_move(&mut self, mv: &Move, prev_state: &PreviousBoardState) {
         let (from_arr_r, from_arr_f) = square_to_array_indices(mv.from);

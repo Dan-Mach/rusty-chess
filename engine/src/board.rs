@@ -258,6 +258,9 @@ impl Board {
                 if mv.to == rank_file_enums_to_square(Rank::Eighth, File::H) { self.castling_kingside_black = false; }
             }
         }
+
+
+        
         
         // Update Fullmove Number
         if self.active_color == Color::Black { self.fullmove_number += 1; }
