@@ -20,7 +20,7 @@ pub fn evaluate_(board: &Board) -> i32 {
     for rank in 0..8 {
         for file in 0..8{
             if let Some(piece) = board.squares[rank][file] {
-               let value = piece_value(piece);
+               let value = piece_value(piece.kind);
 
                if piece.color == Color::White {
                    score += value;
