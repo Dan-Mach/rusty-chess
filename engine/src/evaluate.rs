@@ -14,7 +14,7 @@ fn piece_value(piece: Piece) -> i32 {
     }
 }
 
-pub fn evaluate_(board: &Board) -> i32 {
+pub fn evaluate(board: &Board) -> i32 {
     let mut score = 0;
 
     for rank in 0..8 {
