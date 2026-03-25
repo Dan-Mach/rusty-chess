@@ -3,7 +3,7 @@ use crate::pieces::Piece;
 use crate::color::Color;
 use crate::board::Board;
 
-fn piece_value(piece: Piece) -> i32 {
+pub fn piece_value(piece: Piece) -> i32 {
     match piece {
         Piece::Pawn => 100,
         Piece::Knight => 320,

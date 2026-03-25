@@ -8,8 +8,8 @@ mod error;
 mod bitboard;
 mod coordinates;
 mod move_generation;
-mod evaluate;
-mod search;
+pub mod evaluate;
+pub mod search;
 
 pub use crate::board::*;
 pub use crate::pieces::*;
