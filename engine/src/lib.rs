@@ -30,4 +30,5 @@ mod tests {
     mod checkmate_test;
     mod logic_error_tests;
     mod evaluate_move;
+    mod best_move;
 }

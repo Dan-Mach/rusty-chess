@@ -47,12 +47,12 @@ pub fn alphabeta(
     if depth == 0 {
         return evaluate(board);
     }
-
+   
     let moves = board.generate_legal_moves();
 
     if maximizing {
         let mut value = i32::MIN;
-
+        
         for mv in moves {
             board.make_move(&mv);
 
