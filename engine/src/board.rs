@@ -16,12 +16,14 @@ pub enum GameResult {
 #[derive(Debug, Clone, Copy)]
 pub struct PreviousBoardState {
     pub captured_piece: Option<ColoredPiece>,
-    pub previous_en_passant_target: Option<(usize, usize)>, 
+    pub previous_en_passant_target: Option<(usize, usize)>,
     pub castling_kingside_white: bool,
     pub castling_queenside_white: bool,
     pub castling_kingside_black: bool,
     pub castling_queenside_black: bool,
     pub previous_halfmove_clock: u32,
+    pub previous_fullmove_number: u32,
+    pub previous_game_result: GameResult,
 }
 #[derive(Clone, Debug)]
 pub struct Board {
@@ -185,6 +187,8 @@ impl Board {
             castling_kingside_black: self.castling_kingside_black,
             castling_queenside_black: self.castling_queenside_black,
             previous_halfmove_clock: self.halfmove_clock,
+            previous_fullmove_number: self.fullmove_number,
+            previous_game_result: self.game_result,
         };
         self.move_history.push((mv.clone(), prev_state));
         let mut actual_captured_piece_for_ep_logic = prev_state.captured_piece;

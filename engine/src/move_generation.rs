@@ -465,71 +465,83 @@ impl Board {
         }
     }
     pub fn unmake_move(&mut self, mv: &Move, prev_state: &PreviousBoardState) {
-        let (from_arr_r, from_arr_f) = square_to_array_indices(mv.from);
-        let (to_arr_r, to_arr_f) = square_to_array_indices(mv.to);
+        let (from_r, from_f) = square_to_array_indices(mv.from);
+        let (to_r, to_f) = square_to_array_indices(mv.to);
 
-        self.active_color = !self.active_color; 
+        // Restore side to move FIRST
+        self.active_color = !self.active_color;
 
-        if self.active_color == Color::Black { 
+        // Restore state
+        self.castling_kingside_white = prev_state.castling_kingside_white;
         self.castling_queenside_white = prev_state.castling_queenside_white;
         self.castling_kingside_black = prev_state.castling_kingside_black;
         self.castling_queenside_black = prev_state.castling_queenside_black;
-
         self.en_passant_target = prev_state.previous_en_passant_target;
-
         self.halfmove_clock = prev_state.previous_halfmove_clock;
+        self.fullmove_number = prev_state.previous_fullmove_number;
+        self.game_result = prev_state.previous_game_result;
 
+        let piece = match self.squares[to_r][to_f] {
+            Some(p) => p,
+            None => {
+                tracing::error!(
+                    "CRITICAL BUG: to square empty during undo\nmv={:?}\nfen={}",
+                    mv,
+                    self.to_fen_string()
+                );
+                return; // prevent crash so we can see bug
+            }
+        };
 
-        let piece_that_moved = self.squares[to_arr_r][to_arr_f]
-            .expect("unmake_move: No piece at 'to' square, should have been moved by make_move.");
-
-
-        if mv.promotion.is_some() {
-            // Change the piece back to a pawn of its color
-            self.squares[from_arr_r][from_arr_f] = Some(ColoredPiece {
-                kind: PieceKindEnum::Pawn,
-                color: piece_that_moved.color, // Color of the promoted piece is the pawn's color
-            });
-        } else {
-
-            self.squares[from_arr_r][from_arr_f] = Some(piece_that_moved);
-        }
-        self.squares[to_arr_r][to_arr_f] = prev_state.captured_piece;
-
-        if piece_that_moved.kind == PieceKindEnum::Pawn &&
-           (from_arr_f != to_arr_f) && 
-           prev_state.captured_piece.is_none() && 
-           prev_state.previous_en_passant_target.map_or(false, |ep_indices| 
-               mv.to == array_indices_to_square(ep_indices.0, ep_indices.1)
-           )
-        {
-            let captured_pawn_arr_r = if piece_that_moved.color == Color::White {
-                to_arr_r + 1 
-            } else {
-                to_arr_r - 1
-            };
-
-            let opponent_color = !piece_that_moved.color;
-            self.squares[captured_pawn_arr_r][to_arr_f] = Some(ColoredPiece {
-                kind: PieceKindEnum::Pawn,
-                color: opponent_color,
-            });
-        }
-
-        if piece_that_moved.kind == PieceKindEnum::King &&
-           (to_arr_f as i8 - from_arr_f as i8).abs() == 2 { 
-            
-            let (rook_original_f_idx, rook_current_f_idx) = if to_arr_f > from_arr_f {
+        // Handle castling FIRST
+        if piece.kind == PieceKindEnum::King && (to_f as i8 - from_f as i8).abs() == 2 {
+            let (rook_from, rook_to) = if to_f > from_f {
                 (File::H.to_index(), File::F.to_index())
-            } else { 
+            } else {
                 (File::A.to_index(), File::D.to_index())
             };
-            if let Some(rook_piece) = self.squares[from_arr_r][rook_current_f_idx].take() {
-                self.squares[from_arr_r][rook_original_f_idx] = Some(rook_piece);
+
+            let rook = self.squares[from_r][rook_to]
+                .take()
+                .expect("rook missing in undo castling");
+
+            self.squares[from_r][rook_from] = Some(rook);
+        }
+
+        // Move piece back (handle promotion)
+        let restored_piece = if mv.promotion.is_some() {
+            ColoredPiece {
+                kind: PieceKindEnum::Pawn,
+                color: piece.color,
+            }
+        } 
+        else {
+                piece
+            };
+
+        self.squares[from_r][from_f] = Some(restored_piece);
+
+        // Restore captured piece normally
+        self.squares[to_r][to_f] = prev_state.captured_piece;
+
+        // Handle EN PASSANT LAST (IMPORTANT)
+        if restored_piece.kind == PieceKindEnum::Pawn
+            && from_f != to_f
+            && prev_state.captured_piece.is_none()
+            && prev_state.previous_en_passant_target
+                .map_or(false, |ep| mv.to == array_indices_to_square(ep.0, ep.1))
+        {
+            let cap_r = if restored_piece.color == Color::White {
+                to_r + 1
             } else {
-                panic!("Unmake castling error: Rook not found at expected castled position!");
-            }
-            }
+                to_r - 1
+            };
+
+            // DO NOT TOUCH self.squares[to_r][to_f] here
+            self.squares[cap_r][to_f] = Some(ColoredPiece {
+                kind: PieceKindEnum::Pawn,
+                color: !restored_piece.color,
+            });
         }
     }
 }

@@ -9,6 +9,7 @@ arrayvec = "0.7.2"
 nodrop = "0.1.14"
 failure = "0.1.6"
 thiserror = "1.0"
+tracing = "0.1.44"
 
 [profile.release]
 opt-level = 3
