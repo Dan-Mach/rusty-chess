@@ -482,15 +482,14 @@ impl Board {
         self.game_result = prev_state.previous_game_result;
 
         let piece = match self.squares[to_r][to_f] {
-            Some(p) => p,
-            None => {
-                tracing::error!(
-                    "CRITICAL BUG: to square empty during undo\nmv={:?}\nfen={}",
-                    mv,
-                    self.to_fen_string()
-                );
-                return; // prevent crash so we can see bug
-            }
+        Some(p) => p,
+        None => {
+            panic!(
+                "unmake_move corrupt board: mv={:?}, fen={}",
+                mv,
+                self.to_fen_string()
+            );
+        }
         };
 
         // Handle castling FIRST
@@ -524,24 +523,32 @@ impl Board {
         // Restore captured piece normally
         self.squares[to_r][to_f] = prev_state.captured_piece;
 
-        // Handle EN PASSANT LAST (IMPORTANT)
-        if restored_piece.kind == PieceKindEnum::Pawn
-            && from_f != to_f
-            && prev_state.captured_piece.is_none()
-            && prev_state.previous_en_passant_target
-                .map_or(false, |ep| mv.to == array_indices_to_square(ep.0, ep.1))
-        {
-            let cap_r = if restored_piece.color == Color::White {
-                to_r + 1
-            } else {
-                to_r - 1
-            };
+        // Handle EN PASSANT LAST
+        if restored_piece.kind == PieceKindEnum::Pawn {
+            if let Some((ep_r, ep_f)) = prev_state.previous_en_passant_target {
+                let ep_square = array_indices_to_square(ep_r, ep_f);
 
-            // DO NOT TOUCH self.squares[to_r][to_f] here
-            self.squares[cap_r][to_f] = Some(ColoredPiece {
-                kind: PieceKindEnum::Pawn,
-                color: !restored_piece.color,
-            });
+                let is_en_passant_undo =
+                    mv.to == ep_square &&
+                    from_f != to_f &&
+                    prev_state.captured_piece.is_none();
+
+                if is_en_passant_undo {
+                    let captured_pawn_r = if restored_piece.color == Color::White {
+                        ep_r + 1
+                    } else {
+                        ep_r - 1
+                    };
+
+                    self.squares[captured_pawn_r][ep_f] = Some(ColoredPiece {
+                        kind: PieceKindEnum::Pawn,
+                        color: !restored_piece.color,
+                    });
+
+                    // destination square of an EP move must stay empty after undo
+                    self.squares[to_r][to_f] = None;
+                }
+            }
         }
     }
 }

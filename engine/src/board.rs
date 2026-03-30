@@ -213,19 +213,27 @@ impl Board {
 
         let (from_r_enum, from_f_enum) = square_to_rank_file_enums(mv.from);
         let (to_r_enum, _to_f_enum) = square_to_rank_file_enums(mv.to);
-        if (to_r_enum.to_index() as i8 - from_r_enum.to_index() as i8).abs() == 2 {
+
+        if piece_moved.kind == PieceKindEnum::Pawn
+        && (to_r_enum.to_index() as i8 - from_r_enum.to_index() as i8).abs() == 2{
             let ep_rank_val = (from_r_enum.to_index() + to_r_enum.to_index()) / 2;
             let ep_square_idx = (ep_rank_val as u8 * 8 + from_f_enum.to_index() as u8) as Square;
-             self.en_passant_target = Some(square_to_array_indices(ep_square_idx));
+            self.en_passant_target = Some(square_to_array_indices(ep_square_idx));
         }
 
-        if prev_state.captured_piece.is_none() && (from_arr_f != to_arr_f) {
+        if piece_moved.kind == PieceKindEnum::Pawn && prev_state.captured_piece.is_none() && from_arr_f != to_arr_f{
             if let Some(ep_indices_to_check) = prev_state.previous_en_passant_target {
                 let ep_sq_to_check = array_indices_to_square(ep_indices_to_check.0, ep_indices_to_check.1);
                 if mv.to == ep_sq_to_check {
-                    let captured_pawn_arr_r = if piece_moved.color == Color::White { to_arr_r + 1 } else { to_arr_r - 1 };
+                    let captured_pawn_arr_r = if piece_moved.color == Color::White {
+                        to_arr_r + 1
+                    } else {
+                        to_arr_r - 1
+                    };
+
                     if captured_pawn_arr_r < 8 {
-                        actual_captured_piece_for_ep_logic = self.squares[captured_pawn_arr_r][to_arr_f].take(); 
+                        actual_captured_piece_for_ep_logic =
+                            self.squares[captured_pawn_arr_r][to_arr_f].take();
                     }
                 }
             }

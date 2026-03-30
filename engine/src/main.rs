@@ -12,5 +12,7 @@ pub fn undo_move(_board: &mut Board, game_move: &Move) {
 fn main() {
 
     let mut board = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+
+
     
 }

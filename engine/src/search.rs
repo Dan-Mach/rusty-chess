@@ -1,7 +1,7 @@
 use crate::board::*;
 use crate::evaluate::*;
 
-fn minimax(board: &mut Board, depth: i32, maximizing: bool) -> i32 {
+pub fn minimax(board: &mut Board, depth: i32, maximizing: bool) -> i32 {
     if depth == 0 {
         return evaluate(board);
     }
@@ -37,7 +37,7 @@ fn minimax(board: &mut Board, depth: i32, maximizing: bool) -> i32 {
     }
 }
 
-fn alphabeta(
+pub fn alphabeta(
     board: &mut Board,
     depth: i32,
     mut alpha: i32,
