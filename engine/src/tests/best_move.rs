@@ -1,6 +1,5 @@
 use crate::board::Board;
 
-
 #[test]
 fn test_make_undo_roundtrip_startpos() {
     let mut board = Board::parse_fen(

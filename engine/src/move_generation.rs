@@ -238,7 +238,6 @@ impl Board {
             }
         };
         
-
         let one_step_fwd_rank_val = from_rank_val + forward_delta_rank;
         if one_step_fwd_rank_val >= 0 && one_step_fwd_rank_val <= 7 { 
             let target_sq_one_step: Square = (one_step_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
@@ -384,7 +383,6 @@ impl Board {
         let king_sq = from_sq;
 
         if piece_color == Color::White {
-            // --- Kingside ---
             if self.castling_kingside_white {
                 let f1 = rank_file_enums_to_square(Rank::First, File::F);
                 let g1 = rank_file_enums_to_square(Rank::First, File::G);
@@ -402,7 +400,6 @@ impl Board {
                 }
             }
 
-            // --- Queenside ---
             if self.castling_queenside_white {
                 let d1 = rank_file_enums_to_square(Rank::First, File::D);
                 let c1 = rank_file_enums_to_square(Rank::First, File::C);
@@ -423,6 +420,7 @@ impl Board {
                 }
             }
         }
+
         if  piece_color == Color::Black {
             // --- Kingside ---
             if self.castling_kingside_black {
@@ -442,7 +440,6 @@ impl Board {
                 }
             }
 
-            // --- Queenside ---
             if self.castling_queenside_black {
                 let d8 = rank_file_enums_to_square(Rank::Eighth, File::D);
                 let c8 = rank_file_enums_to_square(Rank::Eighth, File::C);
@@ -468,10 +465,7 @@ impl Board {
         let (from_r, from_f) = square_to_array_indices(mv.from);
         let (to_r, to_f) = square_to_array_indices(mv.to);
 
-        // Restore side to move FIRST
         self.active_color = !self.active_color;
-
-        // Restore state
         self.castling_kingside_white = prev_state.castling_kingside_white;
         self.castling_queenside_white = prev_state.castling_queenside_white;
         self.castling_kingside_black = prev_state.castling_kingside_black;
@@ -520,10 +514,8 @@ impl Board {
 
         self.squares[from_r][from_f] = Some(restored_piece);
 
-        // Restore captured piece normally
         self.squares[to_r][to_f] = prev_state.captured_piece;
 
-        // Handle EN PASSANT LAST
         if restored_piece.kind == PieceKindEnum::Pawn {
             if let Some((ep_r, ep_f)) = prev_state.previous_en_passant_target {
                 let ep_square = array_indices_to_square(ep_r, ep_f);
@@ -545,7 +537,6 @@ impl Board {
                         color: !restored_piece.color,
                     });
 
-                    // destination square of an EP move must stay empty after undo
                     self.squares[to_r][to_f] = None;
                 }
             }

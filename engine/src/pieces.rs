@@ -2,7 +2,6 @@ use crate::color:: Color;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Hash, Ord)]
-//chess piecees
 pub enum Piece {
     Pawn,
     Knight,

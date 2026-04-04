@@ -9,7 +9,7 @@ use crate::error::{Error, FenParseError};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameResult {
     InProgress,
-    Checkmate(Color), // Color of the winner
+    Checkmate(Color), 
     Stalemate,
 }
 
@@ -194,7 +194,7 @@ impl Board {
         let mut actual_captured_piece_for_ep_logic = prev_state.captured_piece;
         self.en_passant_target = None; // Reset EP target after a move
         self.squares[to_arr_r][to_arr_f] = Some(piece_moved);
-        self.squares[from_arr_r][from_arr_f] = None; // Clear the 'from' square
+        self.squares[from_arr_r][from_arr_f] = None; 
 
         if piece_moved.kind == PieceKindEnum::Pawn || prev_state.captured_piece.is_some() {
             self.halfmove_clock = 0;
@@ -238,13 +238,11 @@ impl Board {
                 }
             }
         }
-       // Re-check halfmove clock if EP capture changed the capture status
+
         if piece_moved.kind == PieceKindEnum::Pawn || prev_state.captured_piece.is_some() || actual_captured_piece_for_ep_logic.is_some() {
             self.halfmove_clock = 0;
         }
 
-        // Handle Castling 
-        //there is an error here
         if piece_moved.kind == PieceKindEnum::King && (to_arr_f as i8 - from_arr_f as i8).abs() == 2 {
             let (rook_from_f_idx, rook_to_f_idx) = if to_arr_f > from_arr_f { (File::H.to_index(), File::F.to_index()) } else { (File::A.to_index(), File::D.to_index()) };
             if let Some(rook_piece) = self.squares[from_arr_r][rook_from_f_idx].take() {
@@ -252,7 +250,6 @@ impl Board {
             }
         }
 
-        // Update Castling Rights after the move
         if piece_moved.kind == PieceKindEnum::King {
             if piece_moved.color == Color::White { self.castling_kingside_white = false; self.castling_queenside_white = false; } 
             else { self.castling_kingside_black = false; self.castling_queenside_black = false; }
@@ -261,7 +258,7 @@ impl Board {
         if mv.from == rank_file_enums_to_square(Rank::First, File::H) { self.castling_kingside_white = false; }
         if mv.from == rank_file_enums_to_square(Rank::Eighth, File::A) { self.castling_queenside_black = false; }
         if mv.from == rank_file_enums_to_square(Rank::Eighth, File::H) { self.castling_kingside_black = false; }
-        // If a rook is captured on its starting square
+
         if let Some(cap_piece) = prev_state.captured_piece { // Check what was originally on mv.to
             if cap_piece.kind == PieceKindEnum::Rook {
                 if mv.to == rank_file_enums_to_square(Rank::First, File::A) { self.castling_queenside_white = false; }
@@ -271,13 +268,8 @@ impl Board {
             }
         }
 
-
-        
-        
-        // Update Fullmove Number
         if self.active_color == Color::Black { self.fullmove_number += 1; }
 
-        // Switch Active Color
         self.active_color = !self.active_color;
 
         prev_state 
@@ -337,21 +329,18 @@ impl Board {
     pub fn is_checkmate(&self) -> bool {
         self.is_in_check() && self.generate_legal_moves().is_empty()
     }
-    
-    /// Check if the current position is stalemate
+
     pub fn is_stalemate(&self) -> bool {
 
         !self.is_in_check() && self.generate_legal_moves().is_empty()
     }
-    
-    /// Check if the game is over (checkmate or stalemate)
+
     pub fn is_game_over(&self) -> bool {
         self.game_result != GameResult::InProgress
     }
 
     pub fn update_game_result(&mut self) {
         if self.game_result != GameResult::InProgress {
-            // Game already over, don't update
             return;
         }
    
@@ -359,7 +348,6 @@ impl Board {
         let has_legal_moves = !legal_moves.is_empty();
         
         if !has_legal_moves {
-            // No legal moves - either checkmate or stalemate
             if self.is_in_check() {
                 let winner = !self.active_color;
                 self.game_result = GameResult::Checkmate(winner);
@@ -373,15 +361,13 @@ impl Board {
         let mut moves = MoveList::new(); // MoveList is likely Vec<Move>
         let player_color = self.active_color;
 
-        // Iterate over each square of the board
-        for r_idx in 0..8 { // 0 is Rank 8 (FEN), 7 is Rank 1 (FEN) in our array
-            for f_idx in 0..8 { // 0 is File A, 7 is File H
+        for r_idx in 0..8 { 
+            for f_idx in 0..8 { 
                 if let Some(piece_on_square) = self.squares[r_idx][f_idx] {
-                    // Check if the piece belongs to the current player
+        
                     if piece_on_square.color == player_color {
                         let from_square: Square = array_indices_to_square(r_idx, f_idx);
 
-                        // Dispatch to piece-specific move generation logic
                         match piece_on_square.kind {
                             PieceKindEnum::Pawn   => self.generate_pawn_moves(from_square, player_color, &mut moves),
                             PieceKindEnum::Knight => self.generate_knight_moves(from_square, player_color, &mut moves),
@@ -401,36 +387,33 @@ impl Board {
     pub fn to_fen_string(&self) -> String {
         let mut fen_parts: Vec<String> = Vec::with_capacity(6);
 
-        // 1. Piece Placement
         let mut piece_placement_fen = String::new();
-        for r_idx in 0..8 { // Iterate from array rank 0 (FEN Rank 8) to array rank 7 (FEN Rank 1)
+        for r_idx in 0..8 { 
             let mut empty_squares_count = 0;
-            for f_idx in 0..8 { // Iterate from file 0 (File A) to file 7 (File H)
+            for f_idx in 0..8 {
                 if let Some(colored_piece) = self.squares[r_idx][f_idx] {
                     if empty_squares_count > 0 {
                         piece_placement_fen.push_str(&empty_squares_count.to_string());
                         empty_squares_count = 0;
                     }
-                    piece_placement_fen.push(colored_piece.to_char()); // Relies on ColoredPiece::to_char()
+                    piece_placement_fen.push(colored_piece.to_char());
                 } else {
                     empty_squares_count += 1;
                 }
             }
-            // If the rank ended with empty squares
+
             if empty_squares_count > 0 {
                 piece_placement_fen.push_str(&empty_squares_count.to_string());
             }
-            // Add '/' separator if it's not the last rank
+
             if r_idx < 7 {
                 piece_placement_fen.push('/');
             }
         }
         fen_parts.push(piece_placement_fen);
 
-        // 2. Active Color
         fen_parts.push(if self.active_color == Color::White { "w".to_string() } else { "b".to_string() });
 
-        // 3. Castling Availability
         let mut castling_fen = String::new();
         if self.castling_kingside_white { castling_fen.push('K'); }
         if self.castling_queenside_white { castling_fen.push('Q'); }
@@ -442,7 +425,6 @@ impl Board {
             fen_parts.push(castling_fen);
         }
 
-        // 4. En Passant Target Square
         if let Some((ep_arr_r, ep_arr_f)) = self.en_passant_target {
             let ep_square = array_indices_to_square(ep_arr_r, ep_arr_f);
             let (ep_rank_enum, ep_file_enum) = square_to_rank_file_enums(ep_square);
@@ -454,12 +436,9 @@ impl Board {
         } else {
             fen_parts.push("-".to_string());
         }
-        // 5. Halfmove Clock
+
         fen_parts.push(self.halfmove_clock.to_string());
-
-        // 6. Fullmove Number
         fen_parts.push(self.fullmove_number.to_string());
-
         fen_parts.join(" ")
     }
 }

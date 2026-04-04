@@ -9,7 +9,7 @@ pub fn minimax(board: &mut Board, depth: i32, maximizing: bool) -> i32 {
     let moves = board.generate_legal_moves();
 
     if moves.is_empty() {
-        return evaluate(board); // later: checkmate/stalemate handling
+        return evaluate(board); 
     }
 
     if maximizing {
