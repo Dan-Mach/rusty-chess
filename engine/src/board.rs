@@ -259,7 +259,7 @@ impl Board {
         if mv.from == rank_file_enums_to_square(Rank::Eighth, File::A) { self.castling_queenside_black = false; }
         if mv.from == rank_file_enums_to_square(Rank::Eighth, File::H) { self.castling_kingside_black = false; }
 
-        if let Some(cap_piece) = prev_state.captured_piece { // Check what was originally on mv.to
+        if let Some(cap_piece) = prev_state.captured_piece { 
             if cap_piece.kind == PieceKindEnum::Rook {
                 if mv.to == rank_file_enums_to_square(Rank::First, File::A) { self.castling_queenside_white = false; }
                 if mv.to == rank_file_enums_to_square(Rank::First, File::H) { self.castling_kingside_white = false; }
