@@ -35,8 +35,6 @@ fn terminal_score(board: &Board, depth: i32) -> Option<i32> {
         return None;
     }
 
-    // If you already have a direct "in check" function, use it here instead.
-    // For now, use game_result if your board updates it consistently elsewhere.
     match board.game_result {
         GameResult::Checkmate(winner) => {
             if winner == Color::White {
