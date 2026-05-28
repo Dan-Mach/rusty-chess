@@ -173,7 +173,6 @@ pub fn alphabeta(
             board.make_move(&mv);
             let eval = alphabeta(board, depth - 1, alpha, beta, false);
             board.undo_move().unwrap();
-
             value = value.max(eval);
             alpha = alpha.max(value);
 
