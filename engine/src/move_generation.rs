@@ -215,16 +215,16 @@ impl Board {
         let start_rank_val: i8;
         let promotion_rank_val: i8;
         
-        if piece_color == Color::White {
+       if piece_color == Color::White {
             forward_delta_rank = 1;
             start_rank_val = Rank::Second.to_index() as i8;
             promotion_rank_val = Rank::Eighth.to_index() as i8;
-        } else {
+        } 
+        else {
             forward_delta_rank = -1;
             start_rank_val = Rank::Seventh.to_index() as i8;
             promotion_rank_val = Rank::First.to_index() as i8;
         }
-
         let add_move_with_promotion_check = |current_from_sq: Square, target_rank_val: i8, target_file_val: i8, moves_list: &mut MoveList| {
             if target_rank_val >=0 && target_rank_val <= 7 && target_file_val >=0 && target_file_val <=7 {
                 let target_sq = (target_rank_val as u8 * 8 + target_file_val as u8) as Square;
@@ -238,7 +238,6 @@ impl Board {
             }
         };
         
-
         let one_step_fwd_rank_val = from_rank_val + forward_delta_rank;
         if one_step_fwd_rank_val >= 0 && one_step_fwd_rank_val <= 7 { 
             let target_sq_one_step: Square = (one_step_fwd_rank_val as u8 * 8 + from_file_val as u8) as Square;
@@ -381,118 +380,165 @@ impl Board {
             }
         }
 
-        let opponent_color = !piece_color;
-        let (rank, kingside_rights, queenside_rights) = if piece_color == Color::White {
-            (Rank::First, self.castling_kingside_white, self.castling_queenside_white)
-        } else {
-            (Rank::Eighth, self.castling_kingside_black, self.castling_queenside_black)
-        };
+        let king_sq = from_sq;
 
-        let king_start = rank_file_enums_to_square(rank, File::E);
-        if from_sq == king_start && !self.is_square_attacked(king_start, opponent_color) {
-            if kingside_rights {
-                let f_sq = rank_file_enums_to_square(rank, File::F);
-                let g_sq = rank_file_enums_to_square(rank, File::G);
-                let h_sq = rank_file_enums_to_square(rank, File::H);
-                let (f_r, f_f) = square_to_array_indices(f_sq);
-                let (g_r, g_f) = square_to_array_indices(g_sq);
-                let (h_r, h_f) = square_to_array_indices(h_sq);
-                if self.squares[f_r][f_f].is_none()
-                    && self.squares[g_r][g_f].is_none()
-                    && self.squares[h_r][h_f].map_or(false, |p| p.kind == PieceKindEnum::Rook && p.color == piece_color)
-                    && !self.is_square_attacked(f_sq, opponent_color)
-                    && !self.is_square_attacked(g_sq, opponent_color)
-                {
-                    moves.push(Move::new_quiet(from_sq, g_sq));
+        if piece_color == Color::White {
+            if self.castling_kingside_white {
+                let f1 = rank_file_enums_to_square(Rank::First, File::F);
+                let g1 = rank_file_enums_to_square(Rank::First, File::G);
+
+                let (f1_r, f1_f) = square_to_array_indices(f1);
+                let (g1_r, g1_f) = square_to_array_indices(g1);
+
+                if self.squares[f1_r][f1_f].is_none() &&
+                self.squares[g1_r][g1_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::Black) &&
+                !self.is_square_attacked(f1, Color::Black) &&
+                !self.is_square_attacked(g1, Color::Black) {
+
+                    moves.push(Move::new_quiet(king_sq, g1));
                 }
             }
 
-            if queenside_rights {
-                let b_sq = rank_file_enums_to_square(rank, File::B);
-                let c_sq = rank_file_enums_to_square(rank, File::C);
-                let d_sq = rank_file_enums_to_square(rank, File::D);
-                let a_sq = rank_file_enums_to_square(rank, File::A);
-                let (b_r, b_f) = square_to_array_indices(b_sq);
-                let (c_r, c_f) = square_to_array_indices(c_sq);
-                let (d_r, d_f) = square_to_array_indices(d_sq);
-                let (a_r, a_f) = square_to_array_indices(a_sq);
-                if self.squares[b_r][b_f].is_none()
-                    && self.squares[c_r][c_f].is_none()
-                    && self.squares[d_r][d_f].is_none()
-                    && self.squares[a_r][a_f].map_or(false, |p| p.kind == PieceKindEnum::Rook && p.color == piece_color)
-                    && !self.is_square_attacked(d_sq, opponent_color)
-                    && !self.is_square_attacked(c_sq, opponent_color)
-                {
-                    moves.push(Move::new_quiet(from_sq, c_sq));
+            if self.castling_queenside_white {
+                let d1 = rank_file_enums_to_square(Rank::First, File::D);
+                let c1 = rank_file_enums_to_square(Rank::First, File::C);
+                let b1 = rank_file_enums_to_square(Rank::First, File::B);
+
+                let (d1_r, d1_f) = square_to_array_indices(d1);
+                let (c1_r, c1_f) = square_to_array_indices(c1);
+                let (b1_r, b1_f) = square_to_array_indices(b1);
+
+                if self.squares[d1_r][d1_f].is_none() &&
+                self.squares[c1_r][c1_f].is_none() &&
+                self.squares[b1_r][b1_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::Black) &&
+                !self.is_square_attacked(d1, Color::Black) &&
+                !self.is_square_attacked(c1, Color::Black) {
+
+                    moves.push(Move::new_quiet(king_sq, c1));
+                }
+            }
+        }
+
+        if  piece_color == Color::Black {
+            // --- Kingside ---
+            if self.castling_kingside_black {
+                let f8 = rank_file_enums_to_square(Rank::Eighth, File::F);
+                let g8 = rank_file_enums_to_square(Rank::Eighth, File::G);
+
+                let (f8_r, f8_f) = square_to_array_indices(f8);
+                let (g8_r, g8_f) = square_to_array_indices(g8);
+
+                if self.squares[f8_r][f8_f].is_none() &&
+                self.squares[g8_r][g8_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::White) &&
+                !self.is_square_attacked(f8, Color::White) &&
+                !self.is_square_attacked(g8, Color::White) {
+
+                    moves.push(Move::new_quiet(king_sq, g8));
+                }
+            }
+
+            if self.castling_queenside_black {
+                let d8 = rank_file_enums_to_square(Rank::Eighth, File::D);
+                let c8 = rank_file_enums_to_square(Rank::Eighth, File::C);
+                let b8 = rank_file_enums_to_square(Rank::Eighth, File::B);
+
+                let (d8_r, d8_f) = square_to_array_indices(d8);
+                let (c8_r, c8_f) = square_to_array_indices(c8);
+                let (b8_r, b8_f) = square_to_array_indices(b8);
+
+                if self.squares[d8_r][d8_f].is_none() &&
+                self.squares[c8_r][c8_f].is_none() &&
+                self.squares[b8_r][b8_f].is_none() &&
+                !self.is_square_attacked(king_sq, Color::White) &&
+                !self.is_square_attacked(d8, Color::White) &&
+                !self.is_square_attacked(c8, Color::White) {
+
+                    moves.push(Move::new_quiet(king_sq, c8));
                 }
             }
         }
     }
     pub fn unmake_move(&mut self, mv: &Move, prev_state: &PreviousBoardState) {
-        let (from_arr_r, from_arr_f) = square_to_array_indices(mv.from);
-        let (to_arr_r, to_arr_f) = square_to_array_indices(mv.to);
+        let (from_r, from_f) = square_to_array_indices(mv.from);
+        let (to_r, to_f) = square_to_array_indices(mv.to);
 
-        self.active_color = !self.active_color; 
-
-        if self.active_color == Color::Black { 
+        self.active_color = !self.active_color;
+        self.castling_kingside_white = prev_state.castling_kingside_white;
         self.castling_queenside_white = prev_state.castling_queenside_white;
         self.castling_kingside_black = prev_state.castling_kingside_black;
         self.castling_queenside_black = prev_state.castling_queenside_black;
-
         self.en_passant_target = prev_state.previous_en_passant_target;
-
         self.halfmove_clock = prev_state.previous_halfmove_clock;
+        self.fullmove_number = prev_state.previous_fullmove_number;
+        self.game_result = prev_state.previous_game_result;
 
-
-        let piece_that_moved = self.squares[to_arr_r][to_arr_f]
-            .expect("unmake_move: No piece at 'to' square, should have been moved by make_move.");
-
-
-        if mv.promotion.is_some() {
-            // Change the piece back to a pawn of its color
-            self.squares[from_arr_r][from_arr_f] = Some(ColoredPiece {
-                kind: PieceKindEnum::Pawn,
-                color: piece_that_moved.color, // Color of the promoted piece is the pawn's color
-            });
-        } else {
-
-            self.squares[from_arr_r][from_arr_f] = Some(piece_that_moved);
+        let piece = match self.squares[to_r][to_f] {
+        Some(p) => p,
+        None => {
+            panic!(
+                "unmake_move corrupt board: mv={:?}, fen={}",
+                mv,
+                self.to_fen_string()
+            );
         }
-        self.squares[to_arr_r][to_arr_f] = prev_state.captured_piece;
+        };
 
-        if piece_that_moved.kind == PieceKindEnum::Pawn &&
-           (from_arr_f != to_arr_f) && 
-           prev_state.captured_piece.is_none() && 
-           prev_state.previous_en_passant_target.map_or(false, |ep_indices| 
-               mv.to == array_indices_to_square(ep_indices.0, ep_indices.1)
-           )
-        {
-            let captured_pawn_arr_r = if piece_that_moved.color == Color::White {
-                to_arr_r + 1 
-            } else {
-                to_arr_r - 1
-            };
-
-            let opponent_color = !piece_that_moved.color;
-            self.squares[captured_pawn_arr_r][to_arr_f] = Some(ColoredPiece {
-                kind: PieceKindEnum::Pawn,
-                color: opponent_color,
-            });
-        }
-
-        if piece_that_moved.kind == PieceKindEnum::King &&
-           (to_arr_f as i8 - from_arr_f as i8).abs() == 2 { 
-            
-            let (rook_original_f_idx, rook_current_f_idx) = if to_arr_f > from_arr_f {
+        // Handle castling FIRST
+        if piece.kind == PieceKindEnum::King && (to_f as i8 - from_f as i8).abs() == 2 {
+            let (rook_from, rook_to) = if to_f > from_f {
                 (File::H.to_index(), File::F.to_index())
-            } else { 
+            } else {
                 (File::A.to_index(), File::D.to_index())
             };
-            if let Some(rook_piece) = self.squares[from_arr_r][rook_current_f_idx].take() {
-                self.squares[from_arr_r][rook_original_f_idx] = Some(rook_piece);
-            } else {
-                panic!("Unmake castling error: Rook not found at expected castled position!");
+
+            let rook = self.squares[from_r][rook_to]
+                .take()
+                .expect("rook missing in undo castling");
+
+            self.squares[from_r][rook_from] = Some(rook);
+        }
+
+        // Move piece back (handle promotion)
+        let restored_piece = if mv.promotion.is_some() {
+            ColoredPiece {
+                kind: PieceKindEnum::Pawn,
+                color: piece.color,
             }
+        } 
+        else {
+                piece
+            };
+
+        self.squares[from_r][from_f] = Some(restored_piece);
+
+        self.squares[to_r][to_f] = prev_state.captured_piece;
+
+        if restored_piece.kind == PieceKindEnum::Pawn {
+            if let Some((ep_r, ep_f)) = prev_state.previous_en_passant_target {
+                let ep_square = array_indices_to_square(ep_r, ep_f);
+
+                let is_en_passant_undo =
+                    mv.to == ep_square &&
+                    from_f != to_f &&
+                    prev_state.captured_piece.is_none();
+
+                if is_en_passant_undo {
+                    let captured_pawn_r = if restored_piece.color == Color::White {
+                        ep_r + 1
+                    } else {
+                        ep_r - 1
+                    };
+
+                    self.squares[captured_pawn_r][ep_f] = Some(ColoredPiece {
+                        kind: PieceKindEnum::Pawn,
+                        color: !restored_piece.color,
+                    });
+
+                    self.squares[to_r][to_f] = None;
+                }
             }
         }
     }
