@@ -13,7 +13,7 @@ pub fn pop_bit(bb: &mut u64) -> i32 {
         return -1;
     }
     let lsb_index = bb.trailing_zeros() as i32;
-    *bb &= *bb - 1; // Clear the LSB
+    *bb &= *bb - 1; 
     lsb_index
 }
 
